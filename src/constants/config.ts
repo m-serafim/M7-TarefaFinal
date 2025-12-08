@@ -20,8 +20,8 @@ export const CONFIG = {
   
   // API Endpoints
   API_PATHS: {
-    APP_LIST: '/api/steam/ISteamApps/GetAppList/v2/',
+    APP_LIST: '/api/steam/ISteamApps/GetAppList/v2',
     APP_DETAILS: '/api/steamstore/api/appdetails',
-    PLAYER_COUNT: '/api/steam/ISteamUserStats/GetNumberOfCurrentPlayers/v1/',
+    PLAYER_COUNT: '/api/steam/ISteamUserStats/GetNumberOfCurrentPlayers/v1',
   }
 } as const;
