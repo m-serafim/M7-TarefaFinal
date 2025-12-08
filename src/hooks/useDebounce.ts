@@ -4,14 +4,15 @@
  */
 
 import { useState, useEffect } from 'react';
+import { CONFIG } from '../constants';
 
 /**
  * Debounce a value
  * @param value - Value to debounce
- * @param delay - Delay in milliseconds (default: 400)
+ * @param delay - Delay in milliseconds (default: from CONFIG)
  * @returns Debounced value
  */
-export const useDebounce = <T>(value: T, delay = 400): T => {
+export const useDebounce = <T>(value: T, delay = CONFIG.SEARCH_DEBOUNCE_MS): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {

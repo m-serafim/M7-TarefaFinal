@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { UIState } from '../types';
+import { CONFIG } from '../constants';
 
 interface UseFetchOptions {
   timeout?: number;
@@ -30,7 +31,7 @@ export const useFetch = <T>(
   deps: React.DependencyList,
   options: UseFetchOptions = {}
 ): UseFetchResult<T> => {
-  const { timeout = 8000, skip = false } = options;
+  const { timeout = CONFIG.REQUEST_TIMEOUT, skip = false } = options;
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [state, setState] = useState<UIState>('idle');
