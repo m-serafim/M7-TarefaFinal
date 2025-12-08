@@ -1,0 +1,31 @@
+.status-message {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
+  border: 1px solid;
+  margin-bottom: var(--spacing-md);
+}
+
+.status-message-info {
+  background-color: rgba(88, 166, 255, 0.1);
+  border-color: var(--color-info);
+  color: var(--color-info);
+}
+
+.status-message-success {
+  background-color: rgba(63, 185, 80, 0.1);
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.status-message-warning {
+  background-color: rgba(210, 153, 34, 0.1);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.status-message-error {
+  background-color: rgba(248, 81, 73, 0.1);
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
