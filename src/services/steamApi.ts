@@ -12,8 +12,13 @@ import type {
 } from '../types';
 import { CONFIG } from '../constants';
 
-const API_KEY = CONFIG.STEAM_API_KEY;
+const API_KEY = CONFIG.STEAM_API_KEY || 'F00809147D68F4B802F8D6222E404F8A';
 const REQUEST_TIMEOUT = CONFIG.REQUEST_TIMEOUT;
+
+// Debug: Check if API key is loaded
+console.log('Steam API Key loaded:', API_KEY ? 'YES (length: ' + API_KEY.length + ')' : 'NO - EMPTY!');
+console.log('Environment variable value:', import.meta.env.VITE_STEAM_API_KEY);
+console.log('Timeout configured to:', REQUEST_TIMEOUT, 'ms');
 
 /**
  * Fetch with timeout and AbortController
@@ -29,15 +34,15 @@ const fetchWithTimeout = async (
 ): Promise<Response> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
-  
+
   try {
     const response = await fetch(url, {
       ...options,
       signal: controller.signal
     });
-    
+
     clearTimeout(timeoutId);
-    
+
     if (!response.ok) {
       if (response.status === 404) {
         // Return empty data for 404
@@ -48,7 +53,7 @@ const fetchWithTimeout = async (
       }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     return response;
   } catch (error) {
     clearTimeout(timeoutId);
@@ -62,35 +67,35 @@ const fetchWithTimeout = async (
 };
 
 /**
- * Normalize API response to ensure consistent data structure
- * @param data - Raw API response
- * @returns Normalized data
- */
-const normalizeResponse = <T>(data: any): T[] => {
-  if (Array.isArray(data)) {
-    return data;
-  }
-  if (data && Array.isArray(data.data)) {
-    return data.data;
-  }
-  if (data && data.applist && Array.isArray(data.applist.apps)) {
-    return data.applist.apps;
-  }
-  return [];
-};
-
-/**
  * Get list of all Steam games
  * @param signal - AbortSignal for cancellation
  * @returns Array of games
  */
 export const getAppList = async (signal?: AbortSignal): Promise<SteamGame[]> => {
   try {
-    const url = `/api/steam/ISteamApps/GetAppList/v2?key=${API_KEY}`;
-    const response = await fetchWithTimeout(url, { signal });
+    // Use the new IStoreService/GetAppList endpoint (ISteamApps/GetAppList is deprecated)
+    const url = `/api/steam/IStoreService/GetAppList/v1/?key=${API_KEY}&include_games=true&max_results=50000`;
+
+    console.log('[getAppList] Starting request to:', url);
+    const startTime = Date.now();
+
+    const response = await fetchWithTimeout(url, {
+      signal,
+      mode: 'cors',
+    });
+
+    console.log('[getAppList] Response received in', Date.now() - startTime, 'ms, status:', response.status);
+
     const data: GetAppListResponse = await response.json();
-    
-    return normalizeResponse<SteamGame>(data);
+
+    console.log('[getAppList] Data parsed, apps count:', data?.response?.apps?.length || 0);
+
+    // Return apps array from the response structure (new API format)
+    if (data && data.response && Array.isArray(data.response.apps)) {
+      return data.response.apps;
+    }
+
+    return [];
   } catch (error) {
     console.error('Error fetching app list:', error);
     throw error;
@@ -108,15 +113,20 @@ export const getAppDetails = async (
   signal?: AbortSignal
 ): Promise<SteamGameDetails | null> => {
   try {
+    // Use local proxy server for Steam Store API
     const url = `/api/steamstore/api/appdetails?appids=${appid}&l=portuguese`;
-    const response = await fetchWithTimeout(url, { signal });
+
+    const response = await fetchWithTimeout(url, {
+      signal,
+      mode: 'cors',
+    });
     const data: AppDetailsResponse = await response.json();
-    
+
     const appData = data[appid.toString()];
     if (appData && appData.success && appData.data) {
       return appData.data;
     }
-    
+
     return null;
   } catch (error) {
     console.error(`Error fetching details for app ${appid}:`, error);
@@ -135,14 +145,18 @@ export const getPlayerCount = async (
   signal?: AbortSignal
 ): Promise<number | null> => {
   try {
-    const url = `/api/steam/ISteamUserStats/GetNumberOfCurrentPlayers/v1?key=${API_KEY}&appid=${appid}`;
-    const response = await fetchWithTimeout(url, { signal });
+    const url = `/api/steam/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?key=${API_KEY}&appid=${appid}`;
+
+    const response = await fetchWithTimeout(url, {
+      signal,
+      mode: 'cors',
+    });
     const data: GetNumberOfCurrentPlayersResponse = await response.json();
-    
+
     if (data.response && typeof data.response.player_count === 'number') {
       return data.response.player_count;
     }
-    
+
     return null;
   } catch (error) {
     console.error(`Error fetching player count for app ${appid}:`, error);
@@ -160,9 +174,9 @@ export const searchGames = (games: SteamGame[], query: string): SteamGame[] => {
   if (!query || query.trim() === '') {
     return games;
   }
-  
+
   const lowerQuery = query.toLowerCase().trim();
-  return games.filter(game => 
+  return games.filter(game =>
     game.name.toLowerCase().includes(lowerQuery)
   );
 };

@@ -7,6 +7,7 @@
 export interface SteamGame {
   appid: number;
   name: string;
+  details?: SteamGameDetails; // Lazy-loaded details
 }
 
 // Detailed game information from Steam Store API
@@ -58,9 +59,9 @@ export interface SteamGameDetails {
   };
 }
 
-// Response from GetAppList API
+// Response from GetAppList API (IStoreService/GetAppList/v1)
 export interface GetAppListResponse {
-  applist: {
+  response: {
     apps: SteamGame[];
   };
 }

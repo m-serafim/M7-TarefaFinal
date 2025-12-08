@@ -4,17 +4,18 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import type { 
-  SteamGame, 
-  EnhancedGame, 
-  FilterOptions, 
-  SortOptions, 
+import type {
+  SteamGame,
+  EnhancedGame,
+  FilterOptions,
+  SortOptions,
   PaginationOptions,
-  UIState 
+  UIState
 } from './types';
 import { CONFIG } from './constants';
-import { 
-  getAppList, 
+import {
+  getAppList,
+  getAppDetails,
   searchGames,
   getFavorites,
   toggleFavorite as toggleFavoriteInStorage,
@@ -25,7 +26,7 @@ import {
   getLastSort,
   getLastSearch
 } from './services';
-import { 
+import {
   SearchBar,
   FilterControls,
   SortControls,
@@ -48,9 +49,9 @@ function App() {
   const [searchQuery, setSearchQuery] = useState<string>(getLastSearch() || '');
   const [filters, setFilters] = useState<FilterOptions>(getLastFilters() || {});
   const [sort, setSort] = useState<SortOptions>(getLastSort() || { field: 'name', order: 'asc' });
-  const [pagination, setPagination] = useState<PaginationOptions>({ 
-    page: 1, 
-    limit: CONFIG.DEFAULT_PAGE_SIZE 
+  const [pagination, setPagination] = useState<PaginationOptions>({
+    page: 1,
+    limit: CONFIG.DEFAULT_PAGE_SIZE
   });
   const [favorites, setFavorites] = useState<number[]>(getFavorites());
   const [uiState, setUiState] = useState<UIState>('idle');
@@ -59,11 +60,11 @@ function App() {
   // Load games on mount
   useEffect(() => {
     const controller = new AbortController();
-    
+
     const loadGames = async () => {
       setUiState('loading');
       setError(null);
-      
+
       try {
         const games = await getAppList(controller.signal);
         setAllGames(games);
@@ -133,19 +134,41 @@ function App() {
       games = searchGames(games, searchQuery);
     }
 
-    // Filter (basic client-side filtering - would need details for full filtering)
-    // For now, we only filter by favorites if needed
-    
     // Convert to EnhancedGame
-    const enhancedGames: EnhancedGame[] = games.map(game => ({
+    let enhancedGames: EnhancedGame[] = games.map(game => ({
       ...game,
       isFavorite: favorites.includes(game.appid)
     }));
 
+    // Apply filters (works for games with loaded details)
+    if (filters.genre || filters.isFree !== undefined || filters.platform) {
+      enhancedGames = enhancedGames.filter(game => {
+        if (!game.details) return true; // Keep if no details yet
+
+        // Filter by genre
+        if (filters.genre) {
+          const hasGenre = game.details.genres?.some(g => g.description === filters.genre);
+          if (!hasGenre) return false;
+        }
+
+        // Filter by free/paid
+        if (filters.isFree !== undefined) {
+          if (game.details.is_free !== filters.isFree) return false;
+        }
+
+        // Filter by platform
+        if (filters.platform) {
+          if (!game.details.platforms?.[filters.platform]) return false;
+        }
+
+        return true;
+      });
+    }
+
     // Sort
     const sortedGames = [...enhancedGames].sort((a, b) => {
       let comparison = 0;
-      
+
       switch (sort.field) {
         case 'name':
           comparison = a.name.localeCompare(b.name, 'pt-PT');
@@ -156,12 +179,12 @@ function App() {
         default:
           comparison = 0;
       }
-      
+
       return sort.order === 'asc' ? comparison : -comparison;
     });
 
     return sortedGames;
-  }, [allGames, searchQuery, favorites, sort]);
+  }, [allGames, searchQuery, favorites, sort, filters]);
 
   // Paginate
   const paginatedGames = useMemo(() => {
@@ -169,6 +192,50 @@ function App() {
     const end = start + pagination.limit;
     return processedGames.slice(start, end);
   }, [processedGames, pagination]);
+
+  // Fetch details for paginated games (lazy loading)
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchDetailsForVisibleGames = async () => {
+      const gamesToFetch = paginatedGames.filter(game => !game.details);
+
+      if (gamesToFetch.length === 0) return;
+
+      console.log(`[Details] Fetching details for ${gamesToFetch.length} games on page ${pagination.page}`);
+
+      const detailsPromises = gamesToFetch.map(game =>
+        getAppDetails(game.appid, controller.signal)
+          .then(details => ({ appid: game.appid, details }))
+          .catch(err => {
+            console.warn(`Failed to fetch details for ${game.appid}:`, err);
+            return { appid: game.appid, details: null };
+          })
+      );
+
+      const results = await Promise.all(detailsPromises);
+
+      setAllGames(prevGames => {
+        const updatedGames = prevGames.map(game => {
+          const result = results.find(r => r.appid === game.appid);
+          if (result && result.details) {
+            return { ...game, details: result.details };
+          }
+          return game;
+        });
+        return updatedGames;
+      });
+
+      console.log(`[Details] Finished fetching details`);
+    };
+
+    fetchDetailsForVisibleGames();
+
+    return () => {
+      controller.abort();
+    };
+  }, [paginatedGames, pagination.page]);
+
 
   // Determine final UI state
   const finalUiState: UIState = useMemo(() => {
@@ -185,11 +252,11 @@ function App() {
 
       <main className="app-main" id="main-content">
         <div className="app-controls">
-          <SearchBar 
+          <SearchBar
             onSearch={handleSearch}
             initialValue={searchQuery}
           />
-          
+
           <div className="app-controls-row">
             <SortControls
               sort={sort}
@@ -207,10 +274,10 @@ function App() {
           </aside>
 
           <div className="app-content">
-            <div 
-              className="app-status" 
-              role="status" 
-              aria-live="polite" 
+            <div
+              className="app-status"
+              role="status"
+              aria-live="polite"
               aria-atomic="true"
             >
               {finalUiState === 'loading' && <LoadingState />}
@@ -220,11 +287,11 @@ function App() {
               {finalUiState === 'empty' && <EmptyState />}
               {finalUiState === 'success' && (
                 <>
-                  <GameList 
+                  <GameList
                     games={paginatedGames}
                     onToggleFavorite={handleToggleFavorite}
                   />
-                  
+
                   <Pagination
                     pagination={pagination}
                     totalItems={processedGames.length}
