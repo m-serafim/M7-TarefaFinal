@@ -36,7 +36,8 @@ import {
   ErrorState,
   EmptyState,
   Header,
-  Footer
+  Footer,
+  SkipLink
 } from './components/ui';
 import './App.css';
 
@@ -172,9 +173,10 @@ function App() {
 
   return (
     <div className="app">
+      <SkipLink />
       <Header />
 
-      <main className="app-main">
+      <main className="app-main" id="main-content">
         <div className="app-controls">
           <SearchBar 
             onSearch={handleSearch}
