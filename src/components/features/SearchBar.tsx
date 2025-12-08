@@ -38,13 +38,9 @@ export const SearchBar = ({
     if (e.key === 'Enter') {
       e.preventDefault();
       
-      if (inputRef.current) {
-        const isValid = searchQuery.trim() === '' || validateSearchInput(inputRef.current, searchQuery);
-        
-        if (isValid) {
-          isManualSearch.current = true;
-          onSearch(searchQuery);
-        }
+      if (inputRef.current && validateSearchInput(inputRef.current, searchQuery)) {
+        isManualSearch.current = true;
+        onSearch(searchQuery);
       }
     }
   };

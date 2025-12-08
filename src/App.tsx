@@ -87,23 +87,23 @@ function App() {
   // Handle search
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
-    setPagination({ ...pagination, page: 1 });
+    setPagination(prev => ({ ...prev, page: 1 }));
     saveLastSearch(query);
-  }, [pagination]);
+  }, []);
 
   // Handle filter change
   const handleFiltersChange = useCallback((newFilters: FilterOptions) => {
     setFilters(newFilters);
-    setPagination({ ...pagination, page: 1 });
+    setPagination(prev => ({ ...prev, page: 1 }));
     saveLastFilters(newFilters);
-  }, [pagination]);
+  }, []);
 
   // Handle sort change
   const handleSortChange = useCallback((newSort: SortOptions) => {
     setSort(newSort);
-    setPagination({ ...pagination, page: 1 });
+    setPagination(prev => ({ ...prev, page: 1 }));
     saveLastSort(newSort);
-  }, [pagination]);
+  }, []);
 
   // Handle pagination change
   const handlePaginationChange = useCallback((newPagination: PaginationOptions) => {
@@ -118,6 +118,9 @@ function App() {
 
   // Handle retry
   const handleRetry = useCallback(() => {
+    setUiState('idle');
+    setError(null);
+    // Trigger reload by updating a key dependency
     window.location.reload();
   }, []);
 

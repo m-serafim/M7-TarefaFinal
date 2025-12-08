@@ -13,10 +13,9 @@ export const validateSearchInput = (input: HTMLInputElement, value: string): boo
   // Clear any previous custom validity
   input.setCustomValidity('');
   
+  // Empty search is valid (shows all games)
   if (!value || value.trim() === '') {
-    input.setCustomValidity('Por favor, insira um termo de pesquisa');
-    input.reportValidity();
-    return false;
+    return true;
   }
   
   if (value.length < 2) {
