@@ -1,35 +1,242 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+/**
+ * Main App Component
+ * Steam Games Browser SPA
+ */
+
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import type { 
+  SteamGame, 
+  EnhancedGame, 
+  FilterOptions, 
+  SortOptions, 
+  PaginationOptions,
+  UIState 
+} from './types';
+import { 
+  getAppList, 
+  searchGames,
+  getFavorites,
+  toggleFavorite as toggleFavoriteInStorage,
+  saveLastFilters,
+  saveLastSort,
+  saveLastSearch,
+  getLastFilters,
+  getLastSort,
+  getLastSearch
+} from './services';
+import { 
+  SearchBar,
+  FilterControls,
+  SortControls,
+  Pagination,
+  GameList
+} from './components/features';
+import {
+  LoadingState,
+  ErrorState,
+  EmptyState
+} from './components/ui';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
+  // State management
+  const [allGames, setAllGames] = useState<SteamGame[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>(getLastSearch() || '');
+  const [filters, setFilters] = useState<FilterOptions>(getLastFilters() || {});
+  const [sort, setSort] = useState<SortOptions>(getLastSort() || { field: 'name', order: 'asc' });
+  const [pagination, setPagination] = useState<PaginationOptions>({ page: 1, limit: 20 });
+  const [favorites, setFavorites] = useState<number[]>(getFavorites());
+  const [uiState, setUiState] = useState<UIState>('idle');
+  const [error, setError] = useState<Error | null>(null);
+
+  // Load games on mount
+  useEffect(() => {
+    const controller = new AbortController();
+    
+    const loadGames = async () => {
+      setUiState('loading');
+      setError(null);
+      
+      try {
+        const games = await getAppList(controller.signal);
+        setAllGames(games);
+        setUiState(games.length === 0 ? 'empty' : 'success');
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          const error = err instanceof Error ? err : new Error('Failed to load games');
+          setError(error);
+          setUiState('error');
+        }
+      }
+    };
+
+    loadGames();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
+  // Handle search
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    setPagination({ ...pagination, page: 1 });
+    saveLastSearch(query);
+  }, [pagination]);
+
+  // Handle filter change
+  const handleFiltersChange = useCallback((newFilters: FilterOptions) => {
+    setFilters(newFilters);
+    setPagination({ ...pagination, page: 1 });
+    saveLastFilters(newFilters);
+  }, [pagination]);
+
+  // Handle sort change
+  const handleSortChange = useCallback((newSort: SortOptions) => {
+    setSort(newSort);
+    setPagination({ ...pagination, page: 1 });
+    saveLastSort(newSort);
+  }, [pagination]);
+
+  // Handle pagination change
+  const handlePaginationChange = useCallback((newPagination: PaginationOptions) => {
+    setPagination(newPagination);
+  }, []);
+
+  // Handle favorite toggle
+  const handleToggleFavorite = useCallback((appid: number) => {
+    toggleFavoriteInStorage(appid);
+    setFavorites(getFavorites());
+  }, []);
+
+  // Handle retry
+  const handleRetry = useCallback(() => {
+    window.location.reload();
+  }, []);
+
+  // Filter, sort, and paginate games
+  const processedGames = useMemo(() => {
+    let games = allGames;
+
+    // Search
+    if (searchQuery.trim() !== '') {
+      games = searchGames(games, searchQuery);
+    }
+
+    // Filter (basic client-side filtering - would need details for full filtering)
+    // For now, we only filter by favorites if needed
+    
+    // Convert to EnhancedGame
+    const enhancedGames: EnhancedGame[] = games.map(game => ({
+      ...game,
+      isFavorite: favorites.includes(game.appid)
+    }));
+
+    // Sort
+    const sortedGames = [...enhancedGames].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sort.field) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name, 'pt-PT');
+          break;
+        case 'appid':
+          comparison = a.appid - b.appid;
+          break;
+        default:
+          comparison = 0;
+      }
+      
+      return sort.order === 'asc' ? comparison : -comparison;
+    });
+
+    return sortedGames;
+  }, [allGames, searchQuery, favorites, sort]);
+
+  // Paginate
+  const paginatedGames = useMemo(() => {
+    const start = (pagination.page - 1) * pagination.limit;
+    const end = start + pagination.limit;
+    return processedGames.slice(start, end);
+  }, [processedGames, pagination]);
+
+  // Determine final UI state
+  const finalUiState: UIState = useMemo(() => {
+    if (uiState === 'loading') return 'loading';
+    if (uiState === 'error') return 'error';
+    if (processedGames.length === 0) return 'empty';
+    return 'success';
+  }, [uiState, processedGames]);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
+    <div className="app">
+      <header className="app-header">
+        <h1 className="app-title">Steam Games Browser</h1>
+        <p className="app-subtitle">Explore and discover Steam games</p>
+      </header>
+
+      <main className="app-main">
+        <div className="app-controls">
+          <SearchBar 
+            onSearch={handleSearch}
+            initialValue={searchQuery}
+          />
+          
+          <div className="app-controls-row">
+            <SortControls
+              sort={sort}
+              onSortChange={handleSortChange}
+            />
+          </div>
+        </div>
+
+        <div className="app-layout">
+          <aside className="app-sidebar">
+            <FilterControls
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+            />
+          </aside>
+
+          <div className="app-content">
+            <div 
+              className="app-status" 
+              role="status" 
+              aria-live="polite" 
+              aria-atomic="true"
+            >
+              {finalUiState === 'loading' && <LoadingState />}
+              {finalUiState === 'error' && error && (
+                <ErrorState error={error} onRetry={handleRetry} />
+              )}
+              {finalUiState === 'empty' && <EmptyState />}
+              {finalUiState === 'success' && (
+                <>
+                  <GameList 
+                    games={paginatedGames}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                  
+                  <Pagination
+                    pagination={pagination}
+                    totalItems={processedGames.length}
+                    onPaginationChange={handlePaginationChange}
+                  />
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer className="app-footer">
         <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
+          Steam Games Browser | M7 Tarefa Final | 
+          Dados fornecidos pela <a href="https://steamcommunity.com/dev" target="_blank" rel="noopener noreferrer">Steam Web API</a>
         </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+      </footer>
+    </div>
+  );
 }
 
-export default App
+export default App;
