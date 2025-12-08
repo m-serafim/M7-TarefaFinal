@@ -144,5 +144,21 @@ export const truncateText = (
  */
 export const stripHtml = (html: string | null | undefined): string => {
   if (!html) return '';
-  return html.replace(/<[^>]*>/g, '');
+  // Multiple passes to handle nested tags and incomplete sanitization
+  let text = html;
+  let previousText = '';
+  
+  // Keep replacing until no more tags are found
+  while (text !== previousText) {
+    previousText = text;
+    text = text.replace(/<[^>]*>/g, '');
+  }
+  
+  // Also decode common HTML entities
+  return text
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
 };
