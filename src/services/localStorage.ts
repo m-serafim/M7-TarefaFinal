@@ -4,8 +4,9 @@
  */
 
 import type { FilterOptions, SortOptions, LocalStorageData } from '../types';
+import { CONFIG } from '../constants';
 
-const STORAGE_KEY = 'steam-games-browser';
+const STORAGE_KEY = CONFIG.STORAGE_KEY;
 
 /**
  * Get data from localStorage

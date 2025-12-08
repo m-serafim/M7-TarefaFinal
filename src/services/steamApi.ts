@@ -10,9 +10,10 @@ import type {
   AppDetailsResponse,
   GetNumberOfCurrentPlayersResponse
 } from '../types';
+import { CONFIG } from '../constants';
 
-const API_KEY = import.meta.env.VITE_STEAM_API_KEY;
-const REQUEST_TIMEOUT = 8000; // 8 seconds
+const API_KEY = CONFIG.STEAM_API_KEY;
+const REQUEST_TIMEOUT = CONFIG.REQUEST_TIMEOUT;
 
 /**
  * Fetch with timeout and AbortController
