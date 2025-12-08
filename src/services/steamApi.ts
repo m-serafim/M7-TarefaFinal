@@ -86,7 +86,7 @@ const normalizeResponse = <T>(data: any): T[] => {
  */
 export const getAppList = async (signal?: AbortSignal): Promise<SteamGame[]> => {
   try {
-    const url = `/api/steam/ISteamApps/GetAppList/v2/?key=${API_KEY}`;
+    const url = `/api/steam/ISteamApps/GetAppList/v2?key=${API_KEY}`;
     const response = await fetchWithTimeout(url, { signal });
     const data: GetAppListResponse = await response.json();
     
@@ -135,7 +135,7 @@ export const getPlayerCount = async (
   signal?: AbortSignal
 ): Promise<number | null> => {
   try {
-    const url = `/api/steam/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?key=${API_KEY}&appid=${appid}`;
+    const url = `/api/steam/ISteamUserStats/GetNumberOfCurrentPlayers/v1?key=${API_KEY}&appid=${appid}`;
     const response = await fetchWithTimeout(url, { signal });
     const data: GetNumberOfCurrentPlayersResponse = await response.json();
     
