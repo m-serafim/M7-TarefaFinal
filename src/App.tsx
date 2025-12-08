@@ -12,6 +12,7 @@ import type {
   PaginationOptions,
   UIState 
 } from './types';
+import { CONFIG } from './constants';
 import { 
   getAppList, 
   searchGames,
@@ -47,7 +48,10 @@ function App() {
   const [searchQuery, setSearchQuery] = useState<string>(getLastSearch() || '');
   const [filters, setFilters] = useState<FilterOptions>(getLastFilters() || {});
   const [sort, setSort] = useState<SortOptions>(getLastSort() || { field: 'name', order: 'asc' });
-  const [pagination, setPagination] = useState<PaginationOptions>({ page: 1, limit: 20 });
+  const [pagination, setPagination] = useState<PaginationOptions>({ 
+    page: 1, 
+    limit: CONFIG.DEFAULT_PAGE_SIZE 
+  });
   const [favorites, setFavorites] = useState<number[]>(getFavorites());
   const [uiState, setUiState] = useState<UIState>('idle');
   const [error, setError] = useState<Error | null>(null);
