@@ -6,6 +6,7 @@
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { useDebounce } from '../../hooks';
 import { validateSearchInput } from '../../utils';
+import { CONFIG } from '../../constants';
 import './SearchBar.css';
 
 interface SearchBarProps {
@@ -20,7 +21,7 @@ export const SearchBar = ({
   placeholder = 'Pesquisar jogos...' 
 }: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState(initialValue);
-  const debouncedQuery = useDebounce(searchQuery, 400);
+  const debouncedQuery = useDebounce(searchQuery, CONFIG.SEARCH_DEBOUNCE_MS);
   const inputRef = useRef<HTMLInputElement>(null);
   const isManualSearch = useRef(false);
 
@@ -88,7 +89,7 @@ export const SearchBar = ({
         )}
       </div>
       <p className="search-hint">
-        Pressione Enter para pesquisar imediatamente
+        Pesquisa com debounce de {CONFIG.SEARCH_DEBOUNCE_MS}ms | Pressione Enter para pesquisar imediatamente
       </p>
     </div>
   );
