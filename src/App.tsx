@@ -34,7 +34,9 @@ import {
 import {
   LoadingState,
   ErrorState,
-  EmptyState
+  EmptyState,
+  Header,
+  Footer
 } from './components/ui';
 import './App.css';
 
@@ -170,10 +172,7 @@ function App() {
 
   return (
     <div className="app">
-      <header className="app-header">
-        <h1 className="app-title">Steam Games Browser</h1>
-        <p className="app-subtitle">Explore and discover Steam games</p>
-      </header>
+      <Header />
 
       <main className="app-main">
         <div className="app-controls">
@@ -229,12 +228,7 @@ function App() {
         </div>
       </main>
 
-      <footer className="app-footer">
-        <p>
-          Steam Games Browser | M7 Tarefa Final | 
-          Dados fornecidos pela <a href="https://steamcommunity.com/dev" target="_blank" rel="noopener noreferrer">Steam Web API</a>
-        </p>
-      </footer>
+      <Footer />
     </div>
   );
 }
