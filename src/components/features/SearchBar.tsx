@@ -3,7 +3,7 @@
  * Search input with debounce and Enter key support
  */
 
-import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { useDebounce } from '../../hooks';
 import { validateSearchInput } from '../../utils';
 import './SearchBar.css';
