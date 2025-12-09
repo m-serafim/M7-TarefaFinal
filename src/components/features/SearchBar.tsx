@@ -12,13 +12,11 @@ import './SearchBar.css';
 interface SearchBarProps {
   onSearch: (query: string) => void;
   initialValue?: string;
-  placeholder?: string;
 }
 
-export const SearchBar = ({ 
-  onSearch, 
-  initialValue = '', 
-  placeholder = 'Pesquisar jogos...' 
+export const SearchBar = ({
+  onSearch,
+  initialValue = ''
 }: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState(initialValue);
   const debouncedQuery = useDebounce(searchQuery, CONFIG.SEARCH_DEBOUNCE_MS);
@@ -37,7 +35,7 @@ export const SearchBar = ({
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      
+
       if (inputRef.current && validateSearchInput(inputRef.current, searchQuery)) {
         isManualSearch.current = true;
         onSearch(searchQuery);
@@ -47,7 +45,7 @@ export const SearchBar = ({
 
   const handleChange = (value: string) => {
     setSearchQuery(value);
-    
+
     // Clear custom validity on change
     if (inputRef.current) {
       inputRef.current.setCustomValidity('');
@@ -56,37 +54,52 @@ export const SearchBar = ({
 
   return (
     <div className="search-bar">
-      <label htmlFor="search-input" className="sr-only">
-        Pesquisar jogos
-      </label>
       <div className="search-input-wrapper">
-        <span className="search-icon" aria-hidden="true">🔍</span>
+        <span className="search-icon-wrapper">
+          <svg
+            className="search-icon-svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </span>
         <input
           ref={inputRef}
           id="search-input"
           type="text"
           className="search-input"
-          placeholder={placeholder}
+          placeholder="Search for games, e.g. 'Elden Ring'..."
           value={searchQuery}
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          aria-label="Pesquisar jogos"
+          aria-label="Search games"
           maxLength={100}
         />
-        {searchQuery && (
-          <button
-            className="search-clear"
-            onClick={() => handleChange('')}
-            aria-label="Limpar pesquisa"
-            type="button"
-          >
-            ✕
-          </button>
-        )}
+        <div className="search-actions">
+          <span className="search-shortcut">/</span>
+          {searchQuery && (
+            <button
+              className="search-clear"
+              onClick={() => handleChange('')}
+              aria-label="Clear search"
+              type="button"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
-      <p className="search-hint">
-        Pesquisa com debounce de {CONFIG.SEARCH_DEBOUNCE_MS}ms | Pressione Enter para pesquisar imediatamente
-      </p>
     </div>
   );
 };

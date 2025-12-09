@@ -6,16 +6,17 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background-color: var(--color-bg-primary);
 }
-
-
 
 .app-main {
   flex: 1;
   width: 100%;
   max-width: 1600px;
   margin: 0 auto;
-  padding: var(--spacing-xl) var(--spacing-lg);
+  padding: 0 var(--spacing-lg) var(--spacing-xl);
+  /* Removed top padding as Hero handles it */
+  animation: fadeIn 0.6s ease-out;
 }
 
 .app-controls {
@@ -24,15 +25,19 @@
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
   align-items: center;
+  margin-top: 0;
+  /* Removed negative margin to prevent overlap/cutoff issues */
 }
 
+/* Make sort controls distinct since search is gone from here */
 .app-controls-row {
   display: flex;
-  gap: var(--spacing-md);
   width: 100%;
-  max-width: 600px;
-  justify-content: center;
-  flex-wrap: wrap;
+  justify-content: flex-end;
+  /* Push sort to right */
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--spacing-lg);
 }
 
 .app-layout {
@@ -45,6 +50,7 @@
 .app-sidebar {
   position: sticky;
   top: var(--spacing-lg);
+  animation: slideUp 0.7s ease-out;
 }
 
 .app-content {
@@ -55,8 +61,6 @@
   width: 100%;
 }
 
-
-
 @media (max-width: 1024px) {
   .app-layout {
     grid-template-columns: 240px 1fr;
@@ -66,7 +70,11 @@
 
 @media (max-width: 768px) {
   .app-main {
-    padding: var(--spacing-lg) var(--spacing-md);
+    padding: 0 var(--spacing-md) var(--spacing-lg);
+  }
+
+  .app-controls {
+    margin-top: 0;
   }
 
   .app-layout {
@@ -81,5 +89,6 @@
   .app-controls-row {
     flex-direction: column;
     align-items: stretch;
+    justify-content: flex-start;
   }
 }

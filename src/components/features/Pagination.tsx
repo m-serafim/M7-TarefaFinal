@@ -16,7 +16,7 @@ interface PaginationProps {
 
 export const Pagination = ({ pagination, totalItems, onPaginationChange }: PaginationProps) => {
   const pageSizeInputRef = useRef<HTMLInputElement>(null);
-  
+
   const totalPages = Math.ceil(totalItems / pagination.limit);
   const startItem = (pagination.page - 1) * pagination.limit + 1;
   const endItem = Math.min(pagination.page * pagination.limit, totalItems);
@@ -91,7 +91,7 @@ export const Pagination = ({ pagination, totalItems, onPaginationChange }: Pagin
     <div className="pagination">
       <div className="pagination-info">
         <span>
-          A mostrar {startItem} a {endItem} de {totalItems} resultados
+          Showing {startItem} to {endItem} of {totalItems} results
         </span>
       </div>
 
@@ -100,7 +100,7 @@ export const Pagination = ({ pagination, totalItems, onPaginationChange }: Pagin
           className="pagination-button"
           onClick={() => handlePageChange(1)}
           disabled={pagination.page === 1}
-          aria-label="Primeira página"
+          aria-label="First page"
           type="button"
         >
           ⟪
@@ -110,7 +110,7 @@ export const Pagination = ({ pagination, totalItems, onPaginationChange }: Pagin
           className="pagination-button"
           onClick={() => handlePageChange(pagination.page - 1)}
           disabled={pagination.page === 1}
-          aria-label="Página anterior"
+          aria-label="Previous page"
           type="button"
         >
           ⟨
@@ -122,7 +122,7 @@ export const Pagination = ({ pagination, totalItems, onPaginationChange }: Pagin
               key={index}
               className={`pagination-button ${pageNum === pagination.page ? 'active' : ''}`}
               onClick={() => handlePageChange(pageNum)}
-              aria-label={`Página ${pageNum}`}
+              aria-label={`Page ${pageNum}`}
               aria-current={pageNum === pagination.page ? 'page' : undefined}
               type="button"
             >
@@ -139,7 +139,7 @@ export const Pagination = ({ pagination, totalItems, onPaginationChange }: Pagin
           className="pagination-button"
           onClick={() => handlePageChange(pagination.page + 1)}
           disabled={pagination.page === totalPages}
-          aria-label="Próxima página"
+          aria-label="Next page"
           type="button"
         >
           ⟩
@@ -149,7 +149,7 @@ export const Pagination = ({ pagination, totalItems, onPaginationChange }: Pagin
           className="pagination-button"
           onClick={() => handlePageChange(totalPages)}
           disabled={pagination.page === totalPages}
-          aria-label="Última página"
+          aria-label="Last page"
           type="button"
         >
           ⟫
@@ -158,21 +158,21 @@ export const Pagination = ({ pagination, totalItems, onPaginationChange }: Pagin
 
       <div className="pagination-size">
         <label htmlFor="page-size" className="pagination-size-label">
-          Por página:
+          Per page:
         </label>
         <select
           id="page-size"
           className="pagination-size-select"
           value={pagination.limit}
           onChange={(e) => handlePageSizeChange(parseInt(e.target.value, 10))}
-          aria-label="Itens por página"
+          aria-label="Items per page"
         >
           <option value={10}>10</option>
           <option value={20}>20</option>
           <option value={50}>50</option>
           <option value={100}>100</option>
         </select>
-        
+
         <input
           ref={pageSizeInputRef}
           type="number"
@@ -181,7 +181,7 @@ export const Pagination = ({ pagination, totalItems, onPaginationChange }: Pagin
           min={1}
           max={100}
           onChange={(e) => handleCustomPageSize(e.target.value)}
-          aria-label="Tamanho de página personalizado"
+          aria-label="Custom page size"
         />
       </div>
     </div>

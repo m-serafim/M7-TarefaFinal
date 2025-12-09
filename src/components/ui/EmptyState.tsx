@@ -10,9 +10,9 @@ interface EmptyStateProps {
   description?: string;
 }
 
-export const EmptyState = ({ 
-  message = 'Nenhum resultado encontrado',
-  description = 'Tente ajustar os filtros ou o termo de pesquisa.'
+export const EmptyState = ({
+  message = 'No results found',
+  description = 'Try adjusting the filters or search term.'
 }: EmptyStateProps) => {
   return (
     <div className="empty-state" role="status" aria-live="polite">

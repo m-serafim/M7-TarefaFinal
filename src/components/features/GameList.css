@@ -1,19 +1,21 @@
 .game-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--spacing-lg);
   width: 100%;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@media (max-width: 1200px) {
+  .game-list {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+  }
 }
 
 @media (max-width: 768px) {
   .game-list {
     grid-template-columns: 1fr;
     gap: var(--spacing-md);
-  }
-}
-
-@media (min-width: 769px) and (max-width: 1024px) {
-  .game-list {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
 }

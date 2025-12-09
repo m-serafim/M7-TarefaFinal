@@ -1,31 +1,33 @@
 .status-message {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-lg);
   font-size: 0.875rem;
   border: 1px solid;
   margin-bottom: var(--spacing-md);
+  animation: slideUp 0.4s ease-out;
+  backdrop-filter: blur(8px);
 }
 
 .status-message-info {
-  background-color: rgba(88, 166, 255, 0.1);
+  background-color: rgba(96, 165, 250, 0.15);
   border-color: var(--color-info);
   color: var(--color-info);
 }
 
 .status-message-success {
-  background-color: rgba(63, 185, 80, 0.1);
+  background-color: rgba(74, 222, 128, 0.15);
   border-color: var(--color-success);
   color: var(--color-success);
 }
 
 .status-message-warning {
-  background-color: rgba(210, 153, 34, 0.1);
+  background-color: rgba(251, 191, 36, 0.15);
   border-color: var(--color-warning);
   color: var(--color-warning);
 }
 
 .status-message-error {
-  background-color: rgba(248, 81, 73, 0.1);
+  background-color: rgba(248, 113, 113, 0.15);
   border-color: var(--color-error);
   color: var(--color-error);
 }

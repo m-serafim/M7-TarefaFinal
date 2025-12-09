@@ -95,7 +95,7 @@ export interface FilterOptions {
 }
 
 export interface SortOptions {
-  field: 'name' | 'appid' | 'release_date';
+  field: 'name' | 'appid' | 'release_date' | 'popularity';
   order: 'asc' | 'desc';
 }
 

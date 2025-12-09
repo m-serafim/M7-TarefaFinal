@@ -1,36 +1,37 @@
 /**
  * Global Styles
- * Inspired by AtlasOS design language
+ * Pure Black Theme with Minimal White Accents
  */
 
 :root {
-  /* AtlasOS-inspired color palette */
-  --color-primary: #0078d4;
-  --color-primary-hover: #106ebe;
-  --color-primary-active: #005a9e;
-  --color-secondary: #4a5568;
-  --color-accent: #ed8936;
+  /* Pure Black Color Palette */
+  --color-primary: #ffffff;
+  --color-primary-hover: #f0f0f0;
+  --color-primary-active: #e0e0e0;
+  --color-secondary: #a0a0a0;
+  --color-accent: #ffffff;
   
-  /* Background colors */
-  --color-bg-primary: #0d1117;
-  --color-bg-secondary: #161b22;
-  --color-bg-tertiary: #21262d;
-  --color-bg-hover: #30363d;
+  /* Background colors - Pure Black */
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #0a0a0a;
+  --color-bg-tertiary: #121212;
+  --color-bg-hover: #1a1a1a;
+  --color-bg-card: #0f0f0f;
   
-  /* Text colors */
-  --color-text-primary: #e6edf3;
-  --color-text-secondary: #8b949e;
-  --color-text-muted: #6e7681;
+  /* Text colors - White/Gray */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #b0b0b0;
+  --color-text-muted: #707070;
   
-  /* Border colors */
-  --color-border: #30363d;
-  --color-border-hover: #8b949e;
+  /* Border colors - Subtle Grays */
+  --color-border: #222222;
+  --color-border-hover: #444444;
   
   /* Status colors */
-  --color-success: #3fb950;
-  --color-warning: #d29922;
-  --color-error: #f85149;
-  --color-info: #58a6ff;
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-error: #f87171;
+  --color-info: #60a5fa;
   
   /* Spacing */
   --spacing-xs: 0.25rem;
@@ -47,10 +48,11 @@
   font-weight: 400;
   
   /* Misc */
-  --border-radius: 6px;
-  --border-radius-lg: 12px;
-  --transition-fast: 0.15s ease;
-  --transition-normal: 0.25s ease;
+  --border-radius: 8px;
+  --border-radius-lg: 16px;
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -69,6 +71,7 @@ body {
   min-height: 100vh;
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
+  animation: fadeIn 0.5s ease-in-out;
 }
 
 #root {
@@ -100,14 +103,29 @@ p {
 }
 
 a {
-  color: var(--color-primary);
+  color: var(--color-text-primary);
   text-decoration: none;
-  transition: color var(--transition-fast);
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--color-text-primary);
+  transition: width var(--transition-fast);
+}
+
+a:hover::after {
+  width: 100%;
 }
 
 a:hover {
-  color: var(--color-primary-hover);
-  text-decoration: underline;
+  color: var(--color-text-secondary);
 }
 
 button {
@@ -121,35 +139,57 @@ button {
   color: var(--color-text-primary);
   cursor: pointer;
   transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+button:hover::before {
+  width: 300px;
+  height: 300px;
 }
 
 button:hover:not(:disabled) {
   background-color: var(--color-bg-hover);
   border-color: var(--color-border-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
 }
 
 button:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: translateY(0) scale(0.98);
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 button.primary {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-  color: white;
+  background-color: var(--color-text-primary);
+  border-color: var(--color-text-primary);
+  color: var(--color-bg-primary);
 }
 
 button.primary:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
+  background-color: var(--color-text-secondary);
+  border-color: var(--color-text-secondary);
 }
 
 button:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-text-primary);
   outline-offset: 2px;
 }
 
@@ -161,12 +201,18 @@ input, select, textarea {
   font-family: inherit;
   background-color: var(--color-bg-secondary);
   color: var(--color-text-primary);
-  transition: border-color var(--transition-fast);
+  transition: all var(--transition-fast);
+}
+
+input:hover, select:hover, textarea:hover {
+  border-color: var(--color-border-hover);
 }
 
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: var(--color-text-primary);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+  background-color: var(--color-bg-tertiary);
 }
 
 input::placeholder {
@@ -180,16 +226,85 @@ input::placeholder {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-secondary);
+  background: var(--color-bg-primary);
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-bg-hover);
   border-radius: var(--border-radius);
+  border: 2px solid var(--color-bg-primary);
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-muted);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+  }
+}
+
+@keyframes loading-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* Utility classes */
@@ -203,4 +318,16 @@ input::placeholder {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+.fade-in {
+  animation: fadeIn var(--transition-normal);
+}
+
+.slide-up {
+  animation: slideUp var(--transition-normal);
+}
+
+.scale-in {
+  animation: scaleIn var(--transition-normal);
 }

@@ -15,7 +15,7 @@ export const SortControls = ({ sort, onSortChange }: SortControlsProps) => {
   const handleFieldChange = (field: string) => {
     onSortChange({
       ...sort,
-      field: field as 'name' | 'appid' | 'release_date'
+      field: field as 'name' | 'appid' | 'release_date' | 'popularity'
     });
   };
 
@@ -36,7 +36,7 @@ export const SortControls = ({ sort, onSortChange }: SortControlsProps) => {
   return (
     <div className="sort-controls">
       <label htmlFor="sort-field" className="sort-label">
-        Ordenar por:
+        Sort by:
       </label>
       <div className="sort-wrapper">
         <select
@@ -44,11 +44,12 @@ export const SortControls = ({ sort, onSortChange }: SortControlsProps) => {
           className="sort-select"
           value={sort.field}
           onChange={(e) => handleFieldChange(e.target.value)}
-          aria-label="Campo de ordenação"
+          aria-label="Sort field"
         >
-          <option value="name">Nome</option>
+          <option value="popularity">Popularity</option>
+          <option value="name">Name</option>
           <option value="appid">ID</option>
-          <option value="release_date">Data de lançamento</option>
+          <option value="release_date">Release Date</option>
         </select>
 
         <select
@@ -56,18 +57,18 @@ export const SortControls = ({ sort, onSortChange }: SortControlsProps) => {
           className="sort-select"
           value={sort.order}
           onChange={(e) => handleOrderChange(e.target.value)}
-          aria-label="Ordem de ordenação"
+          aria-label="Sort order"
         >
-          <option value="asc">Crescente</option>
-          <option value="desc">Decrescente</option>
+          <option value="asc">Ascending</option>
+          <option value="desc">Descending</option>
         </select>
 
         <button
           className="sort-toggle"
           onClick={toggleOrder}
-          aria-label={`Mudar para ordem ${sort.order === 'asc' ? 'decrescente' : 'crescente'}`}
+          aria-label={`Change to ${sort.order === 'asc' ? 'descending' : 'ascending'} order`}
           type="button"
-          title={`Ordem ${sort.order === 'asc' ? 'crescente' : 'decrescente'}`}
+          title={`${sort.order === 'asc' ? 'Ascending' : 'Descending'} order`}
         >
           {sort.order === 'asc' ? '↑' : '↓'}
         </button>

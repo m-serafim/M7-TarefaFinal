@@ -41,60 +41,60 @@ export const FilterControls = ({ filters, onFiltersChange }: FilterControlsProps
 
   return (
     <div className="filter-controls">
-      <h3 className="filter-title">Filtros</h3>
-      
+      <h3 className="filter-title">Filters</h3>
+
       <div className="filter-group">
         <label htmlFor="filter-genre" className="filter-label">
-          Género
+          Genre
         </label>
         <select
           id="filter-genre"
           className="filter-select"
           value={filters.genre || ''}
           onChange={(e) => handleGenreChange(e.target.value)}
-          aria-label="Filtrar por género"
+          aria-label="Filter by genre"
         >
-          <option value="">Todos os géneros</option>
-          <option value="Action">Ação</option>
-          <option value="Adventure">Aventura</option>
+          <option value="">All genres</option>
+          <option value="Action">Action</option>
+          <option value="Adventure">Adventure</option>
           <option value="RPG">RPG</option>
-          <option value="Strategy">Estratégia</option>
-          <option value="Simulation">Simulação</option>
-          <option value="Sports">Desporto</option>
-          <option value="Racing">Corrida</option>
+          <option value="Strategy">Strategy</option>
+          <option value="Simulation">Simulation</option>
+          <option value="Sports">Sports</option>
+          <option value="Racing">Racing</option>
           <option value="Indie">Indie</option>
         </select>
       </div>
 
       <div className="filter-group">
         <label htmlFor="filter-free" className="filter-label">
-          Preço
+          Price
         </label>
         <select
           id="filter-free"
           className="filter-select"
           value={filters.isFree === undefined ? '' : String(filters.isFree)}
           onChange={(e) => handleIsFreeChange(e.target.value)}
-          aria-label="Filtrar por preço"
+          aria-label="Filter by price"
         >
-          <option value="">Todos</option>
-          <option value="true">Gratuito</option>
-          <option value="false">Pago</option>
+          <option value="">All</option>
+          <option value="true">Free</option>
+          <option value="false">Paid</option>
         </select>
       </div>
 
       <div className="filter-group">
         <label htmlFor="filter-platform" className="filter-label">
-          Plataforma
+          Platform
         </label>
         <select
           id="filter-platform"
           className="filter-select"
           value={filters.platform || ''}
           onChange={(e) => handlePlatformChange(e.target.value)}
-          aria-label="Filtrar por plataforma"
+          aria-label="Filter by platform"
         >
-          <option value="">Todas as plataformas</option>
+          <option value="">All platforms</option>
           <option value="windows">Windows</option>
           <option value="mac">Mac</option>
           <option value="linux">Linux</option>
@@ -107,7 +107,7 @@ export const FilterControls = ({ filters, onFiltersChange }: FilterControlsProps
           onClick={clearFilters}
           type="button"
         >
-          Limpar filtros
+          Clear filters
         </button>
       )}
     </div>

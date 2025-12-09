@@ -69,16 +69,48 @@ const fetchWithTimeout = async (
 /**
  * Get list of all Steam games
  * @param signal - AbortSignal for cancellation
- * @returns Array of games
+ * @returns Array of games (popular games first if enabled)
  */
 export const getAppList = async (signal?: AbortSignal): Promise<SteamGame[]> => {
   try {
-    // Use the new IStoreService/GetAppList endpoint (ISteamApps/GetAppList is deprecated)
-    const url = `/api/steam/IStoreService/GetAppList/v1/?key=${API_KEY}&include_games=true&max_results=50000`;
-
-    console.log('[getAppList] Starting request to:', url);
     const startTime = Date.now();
+    let allGames: SteamGame[] = [];
 
+    // Step 1: Fetch popular games first if enabled
+    if (CONFIG.PRIORITIZE_POPULAR_GAMES) {
+      console.log('[getAppList] Fetching popular games first...');
+      const { POPULAR_GAME_APPIDS } = await import('../constants/popularGames');
+
+      // Fetch popular games in batches to avoid overwhelming the API
+      const batchSize = 20;
+      const popularGames: SteamGame[] = [];
+
+      for (let i = 0; i < POPULAR_GAME_APPIDS.length; i += batchSize) {
+        if (signal?.aborted) break;
+
+        const batch = POPULAR_GAME_APPIDS.slice(i, i + batchSize);
+        const batchPromises = batch.map(appid =>
+          getGameById(appid, signal).catch(err => {
+            console.warn(`Failed to fetch popular game ${appid}:`, err);
+            return null;
+          })
+        );
+
+        const results = await Promise.all(batchPromises);
+        const validGames = results.filter((game): game is SteamGame => game !== null);
+        popularGames.push(...validGames);
+
+        console.log(`[getAppList] Fetched batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(POPULAR_GAME_APPIDS.length / batchSize)}: ${validGames.length} games`);
+      }
+
+      console.log(`[getAppList] Loaded ${popularGames.length} popular games in ${Date.now() - startTime}ms`);
+      allGames = popularGames;
+    }
+
+    // Step 2: Fetch remaining games from the standard API
+    const url = `/api/steam/IStoreService/GetAppList/v1/?key=${API_KEY}&include_games=true`;
+
+    console.log('[getAppList] Fetching full game list from API:', url);
     const response = await fetchWithTimeout(url, {
       signal,
       mode: 'cors',
@@ -87,17 +119,61 @@ export const getAppList = async (signal?: AbortSignal): Promise<SteamGame[]> => 
     console.log('[getAppList] Response received in', Date.now() - startTime, 'ms, status:', response.status);
 
     const data: GetAppListResponse = await response.json();
-
     console.log('[getAppList] Data parsed, apps count:', data?.response?.apps?.length || 0);
 
-    // Return apps array from the response structure (new API format)
+    // Get the API games
+    let apiGames: SteamGame[] = [];
     if (data && data.response && Array.isArray(data.response.apps)) {
-      return data.response.apps;
+      apiGames = data.response.apps;
     }
 
-    return [];
+    // Step 3: Combine popular games with API games (remove duplicates)
+    if (CONFIG.PRIORITIZE_POPULAR_GAMES && allGames.length > 0) {
+      const popularAppIds = new Set(allGames.map(g => g.appid));
+      const remainingGames = apiGames.filter(g => !popularAppIds.has(g.appid));
+
+      allGames = [...allGames, ...remainingGames];
+      console.log(`[getAppList] Combined: ${allGames.length} total games (${popularAppIds.size} popular + ${remainingGames.length} remaining)`);
+    } else {
+      allGames = apiGames;
+    }
+
+    // Step 4: Apply max games limit if configured
+    if (CONFIG.MAX_GAMES_TO_LOAD > 0 && allGames.length > CONFIG.MAX_GAMES_TO_LOAD) {
+      console.log(`[getAppList] Limiting games from ${allGames.length} to ${CONFIG.MAX_GAMES_TO_LOAD}`);
+      allGames = allGames.slice(0, CONFIG.MAX_GAMES_TO_LOAD);
+    }
+
+    console.log(`[getAppList] Completed in ${Date.now() - startTime}ms, returning ${allGames.length} games`);
+    return allGames;
   } catch (error) {
     console.error('Error fetching app list:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get a single game by App ID
+ * @param appid - Game appid to fetch
+ * @param signal - AbortSignal for cancellation
+ * @returns Single game object
+ */
+export const getGameById = async (appid: number, signal?: AbortSignal): Promise<SteamGame | null> => {
+  try {
+    // Fetch game details which includes the name
+    const details = await getAppDetails(appid, signal);
+
+    if (details && details.name) {
+      return {
+        appid: appid,
+        name: details.name,
+        details: details
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[getGameById] Error fetching game:', error);
     throw error;
   }
 };

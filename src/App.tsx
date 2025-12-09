@@ -38,8 +38,7 @@ import {
   ErrorState,
   EmptyState,
   Header,
-  Footer,
-  SkipLink
+  Footer
 } from './components/ui';
 import './App.css';
 
@@ -48,7 +47,7 @@ function App() {
   const [allGames, setAllGames] = useState<SteamGame[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>(getLastSearch() || '');
   const [filters, setFilters] = useState<FilterOptions>(getLastFilters() || {});
-  const [sort, setSort] = useState<SortOptions>(getLastSort() || { field: 'name', order: 'asc' });
+  const [sort, setSort] = useState<SortOptions>(getLastSort() || { field: 'popularity', order: 'desc' });
   const [pagination, setPagination] = useState<PaginationOptions>({
     page: 1,
     limit: CONFIG.DEFAULT_PAGE_SIZE
@@ -176,6 +175,17 @@ function App() {
         case 'appid':
           comparison = a.appid - b.appid;
           break;
+        case 'popularity':
+          // Use appid as a proxy for popularity (lower appid often means older/more established games)
+          // If playerCount is available in the future, we can use that instead
+          comparison = a.appid - b.appid;
+          break;
+        case 'release_date':
+          // Parse release dates from game details
+          const dateA = a.details?.release_date?.date ? new Date(a.details.release_date.date).getTime() : 0;
+          const dateB = b.details?.release_date?.date ? new Date(b.details.release_date.date).getTime() : 0;
+          comparison = dateA - dateB;
+          break;
         default:
           comparison = 0;
       }
@@ -247,16 +257,15 @@ function App() {
 
   return (
     <div className="app">
-      <SkipLink />
-      <Header />
+      <Header>
+        <SearchBar
+          onSearch={handleSearch}
+          initialValue={searchQuery}
+        />
+      </Header>
 
       <main className="app-main" id="main-content">
         <div className="app-controls">
-          <SearchBar
-            onSearch={handleSearch}
-            initialValue={searchQuery}
-          />
-
           <div className="app-controls-row">
             <SortControls
               sort={sort}

@@ -14,29 +14,29 @@ export const ErrorState = ({ error, onRetry }: ErrorStateProps) => {
   // Get human-readable error message
   const getErrorMessage = (err: Error): string => {
     if (err.message.includes('timed out')) {
-      return 'A ligação demorou demasiado tempo. Verifique a sua conexão à internet e tente novamente.';
+      return 'The connection took too long. Check your internet connection and try again.';
     }
     if (err.message.includes('fetch')) {
-      return 'Não foi possível comunicar com o servidor. Verifique a sua conexão à internet.';
+      return 'Could not communicate with the server. Check your internet connection.';
     }
     if (err.message.includes('Network')) {
-      return 'Erro de rede. Verifique a sua conexão à internet.';
+      return 'Network error. Check your internet connection.';
     }
-    return err.message || 'Ocorreu um erro inesperado. Por favor, tente novamente.';
+    return err.message || 'An unexpected error occurred. Please try again.';
   };
 
   return (
     <div className="error-state" role="alert" aria-live="assertive">
       <div className="error-icon" aria-hidden="true">⚠️</div>
-      <h3 className="error-title">Algo correu mal</h3>
+      <h3 className="error-title">Something went wrong</h3>
       <p className="error-message">{getErrorMessage(error)}</p>
       {onRetry && (
-        <button 
-          className="error-retry-button primary" 
+        <button
+          className="error-retry-button primary"
           onClick={onRetry}
           type="button"
         >
-          Tentar novamente
+          Try again
         </button>
       )}
     </div>

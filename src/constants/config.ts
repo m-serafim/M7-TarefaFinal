@@ -5,7 +5,11 @@
 export const CONFIG = {
   // API Configuration
   STEAM_API_KEY: import.meta.env.VITE_STEAM_API_KEY || '',
-  REQUEST_TIMEOUT: 8000, // 8 seconds (assignment requirement: 6-10s)
+  REQUEST_TIMEOUT: 15000, // 15 seconds (Steam API can be slow with large responses)
+
+  // Game Loading Configuration
+  PRIORITIZE_POPULAR_GAMES: true, // Load popular games first
+  MAX_GAMES_TO_LOAD: 10000, // Maximum total games to load (0 = unlimited)
 
   // Pagination Defaults
   DEFAULT_PAGE_SIZE: 20,
