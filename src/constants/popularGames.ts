@@ -18,6 +18,8 @@ export const POPULAR_GAME_APPIDS = [
     1172470, // Apex Legends
     578080, // PUBG: BATTLEGROUNDS
     1269260, // Lost Ark
+    2183900, // Warhammer 40,000: Space Marine 2
+    553850,  // Helldivers 2
 
     // Major AAA Titles
     271590, // Grand Theft Auto V
@@ -27,6 +29,7 @@ export const POPULAR_GAME_APPIDS = [
     2358720, // Black Myth: Wukong
     1817070, // Marvel's Spider-Man Remastered
     1203220, // Naraka: BLADEPOINT
+    2054970, // Dragon's Dogma 2
     1599340, // Baldur's Gate 3
 
     // Popular Action/Adventure

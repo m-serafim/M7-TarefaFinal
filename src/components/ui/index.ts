@@ -9,3 +9,4 @@ export * from './Header';
 export * from './Footer';
 export * from './StatusMessage';
 export * from './SkipLink';
+export * from './PremiumLoader';

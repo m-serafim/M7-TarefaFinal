@@ -12,11 +12,13 @@ import './SearchBar.css';
 interface SearchBarProps {
   onSearch: (query: string) => void;
   initialValue?: string;
+  disabled?: boolean;
 }
 
 export const SearchBar = ({
   onSearch,
-  initialValue = ''
+  initialValue = '',
+  disabled = false
 }: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState(initialValue);
   const debouncedQuery = useDebounce(searchQuery, CONFIG.SEARCH_DEBOUNCE_MS);
@@ -82,6 +84,7 @@ export const SearchBar = ({
           onKeyDown={handleKeyDown}
           aria-label="Search games"
           maxLength={100}
+          disabled={disabled}
         />
         <div className="search-actions">
           <span className="search-shortcut">/</span>

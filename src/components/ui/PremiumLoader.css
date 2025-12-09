@@ -1,0 +1,190 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap');
+
+@keyframes glitch {
+    0% {
+        transform: translate(0);
+    }
+
+    20% {
+        transform: translate(-2px, 2px);
+    }
+
+    40% {
+        transform: translate(-2px, -2px);
+    }
+
+    60% {
+        transform: translate(2px, 2px);
+    }
+
+    80% {
+        transform: translate(2px, -2px);
+    }
+
+    100% {
+        transform: translate(0);
+    }
+}
+
+.premium-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    background-color: #050505;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-family: 'Rajdhani', sans-serif;
+    overflow: hidden;
+    transition: opacity 1.2s ease-in-out, visibility 1.2s ease-in-out;
+}
+
+.premium-loader.fading-out {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+/* CRT Scanline Overlay */
+.premium-loader::after {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    z-index: 10;
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+}
+
+/* Background grid effect */
+.premium-loader::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 200%;
+    background-image:
+        linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 40px 40px;
+    transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
+    animation: grid-move 20s linear infinite;
+    mask-image: radial-gradient(circle, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 70%);
+}
+
+@keyframes grid-move {
+    0% {
+        transform: perspective(500px) rotateX(60deg) translateY(0) translateZ(-200px);
+    }
+
+    100% {
+        transform: perspective(500px) rotateX(60deg) translateY(40px) translateZ(-200px);
+    }
+}
+
+.loader-content {
+    position: relative;
+    z-index: 20;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3rem;
+}
+
+.loader-logo {
+    font-size: 5rem;
+    font-weight: 800;
+    letter-spacing: 0.8rem;
+    text-transform: uppercase;
+    position: relative;
+    color: #ffffff;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    animation: pulse-glow 3s infinite alternate;
+}
+
+.loader-logo::after {
+    content: 'STEAM BROWSER';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    color: #888;
+    opacity: 0.5;
+    animation: glitch 4s infinite;
+    clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+    transform: translate(-2px, 0);
+}
+
+.loader-logo::before {
+    content: 'STEAM BROWSER';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    color: #ccc;
+    opacity: 0.5;
+    animation: glitch 3.5s infinite reverse;
+    clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+    transform: translate(2px, 0);
+}
+
+.loader-bar-container {
+    width: 400px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.15);
+    position: relative;
+    overflow: hidden;
+    border-radius: 0;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.loader-bar {
+    height: 100%;
+    background: #ffffff;
+    box-shadow: 0 0 20px #ffffff;
+    width: 0%;
+    transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: none;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+.loader-status {
+    font-size: 0.9rem;
+    color: #888;
+    letter-spacing: 0.3rem;
+    text-transform: uppercase;
+    font-weight: 500;
+    text-shadow: none;
+}
+
+@keyframes pulse-glow {
+    from {
+        text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+    }
+
+    to {
+        text-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+    }
+}

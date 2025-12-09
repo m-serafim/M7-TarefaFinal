@@ -7,7 +7,7 @@
 export interface SteamGame {
   appid: number;
   name: string;
-  details?: SteamGameDetails; // Lazy-loaded details
+  details?: SteamGameDetails | null; // Lazy-loaded details
 }
 
 // Detailed game information from Steam Store API
@@ -115,7 +115,7 @@ export interface LocalStorageData {
 
 // Enhanced game data for UI
 export interface EnhancedGame extends SteamGame {
-  details?: SteamGameDetails;
+  details?: SteamGameDetails | null;
   playerCount?: number;
   isFavorite?: boolean;
 }

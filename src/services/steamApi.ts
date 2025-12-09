@@ -81,14 +81,17 @@ export const getAppList = async (signal?: AbortSignal): Promise<SteamGame[]> => 
       console.log('[getAppList] Fetching popular games first...');
       const { POPULAR_GAME_APPIDS } = await import('../constants/popularGames');
 
+      // Deduplicate popular App IDs first
+      const uniquePopularAppIds = Array.from(new Set(POPULAR_GAME_APPIDS));
+
       // Fetch popular games in batches to avoid overwhelming the API
       const batchSize = 20;
       const popularGames: SteamGame[] = [];
 
-      for (let i = 0; i < POPULAR_GAME_APPIDS.length; i += batchSize) {
+      for (let i = 0; i < uniquePopularAppIds.length; i += batchSize) {
         if (signal?.aborted) break;
 
-        const batch = POPULAR_GAME_APPIDS.slice(i, i + batchSize);
+        const batch = uniquePopularAppIds.slice(i, i + batchSize);
         const batchPromises = batch.map(appid =>
           getGameById(appid, signal).catch(err => {
             console.warn(`Failed to fetch popular game ${appid}:`, err);
@@ -100,7 +103,7 @@ export const getAppList = async (signal?: AbortSignal): Promise<SteamGame[]> => 
         const validGames = results.filter((game): game is SteamGame => game !== null);
         popularGames.push(...validGames);
 
-        console.log(`[getAppList] Fetched batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(POPULAR_GAME_APPIDS.length / batchSize)}: ${validGames.length} games`);
+        console.log(`[getAppList] Fetched batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(uniquePopularAppIds.length / batchSize)}: ${validGames.length} games`);
       }
 
       console.log(`[getAppList] Loaded ${popularGames.length} popular games in ${Date.now() - startTime}ms`);
@@ -130,6 +133,7 @@ export const getAppList = async (signal?: AbortSignal): Promise<SteamGame[]> => 
     // Step 3: Combine popular games with API games (remove duplicates)
     if (CONFIG.PRIORITIZE_POPULAR_GAMES && allGames.length > 0) {
       const popularAppIds = new Set(allGames.map(g => g.appid));
+      // Further filter apiGames to ensure no collisions
       const remainingGames = apiGames.filter(g => !popularAppIds.has(g.appid));
 
       allGames = [...allGames, ...remainingGames];
@@ -179,6 +183,68 @@ export const getGameById = async (appid: number, signal?: AbortSignal): Promise<
 };
 
 /**
+ * Get detailed information about multiple games
+ * Attempts to batch requests if possible, or runs them in parallel
+ * @param appids - Array of game appids
+ * @param signal - AbortSignal for cancellation
+ * @returns Map of appid to details
+ */
+export const getManyGameDetails = async (
+  appids: number[],
+  signal?: AbortSignal
+): Promise<Record<number, SteamGameDetails | null>> => {
+  if (appids.length === 0) return {};
+
+  try {
+    // Steam Store API supports comma-separated appids
+    // However, we should be careful about URL length and rate limits
+    // Batching 20 at a time is usually safe
+    const batches: number[][] = [];
+    const BATCH_SIZE = 20;
+
+    for (let i = 0; i < appids.length; i += BATCH_SIZE) {
+      batches.push(appids.slice(i, i + BATCH_SIZE));
+    }
+
+    const results: Record<number, SteamGameDetails | null> = {};
+
+    await Promise.all(batches.map(async (batch) => {
+      try {
+        const ids = batch.join(',');
+        const url = `/api/steamstore/api/appdetails?appids=${ids}&l=portuguese`;
+
+        const response = await fetchWithTimeout(url, {
+          signal,
+          mode: 'cors',
+        });
+
+        const data: AppDetailsResponse = await response.json();
+
+        batch.forEach(id => {
+          const appData = data[id.toString()];
+          if (appData && appData.success && appData.data) {
+            results[id] = appData.data;
+          } else {
+            results[id] = null;
+          }
+        });
+      } catch (error) {
+        console.warn(`[getManyGameDetails] Failed to fetch batch ${batch}:`, error);
+        // Fallback to individual fetching if batch fails? 
+        // Or just mark as null. For now, mark as null.
+        batch.forEach(id => { results[id] = null; });
+      }
+    }));
+
+    return results;
+
+  } catch (error) {
+    console.error(`Error fetching details for multiple apps:`, error);
+    return {};
+  }
+};
+
+/**
  * Get detailed information about a specific game
  * @param appid - Game appid
  * @param signal - AbortSignal for cancellation
@@ -188,26 +254,9 @@ export const getAppDetails = async (
   appid: number,
   signal?: AbortSignal
 ): Promise<SteamGameDetails | null> => {
-  try {
-    // Use local proxy server for Steam Store API
-    const url = `/api/steamstore/api/appdetails?appids=${appid}&l=portuguese`;
-
-    const response = await fetchWithTimeout(url, {
-      signal,
-      mode: 'cors',
-    });
-    const data: AppDetailsResponse = await response.json();
-
-    const appData = data[appid.toString()];
-    if (appData && appData.success && appData.data) {
-      return appData.data;
-    }
-
-    return null;
-  } catch (error) {
-    console.error(`Error fetching details for app ${appid}:`, error);
-    return null;
-  }
+  // Reuse the batch logic for single item consistency
+  const results = await getManyGameDetails([appid], signal);
+  return results[appid] || null;
 };
 
 /**
