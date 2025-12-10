@@ -1,62 +1,7 @@
-# Visual Studio
+# Node modules (dependencies) - Keeping this ignored is highly recommended to avoid repo bloat
+node_modules/
+
+# Files unrelated to the project source
 .vs/
 *.user
 *.suo
-*.userosscache
-*.sln.docstates
-
-# Build results
-bin/
-obj/
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-[Ww][Ii][Nn]32/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
-bld/
-[Bb]in/
-[Oo]bj/
-[Ll]og/
-[Ll]ogs/
-
-# Files
-*.cache
-*.pdb
-*.swp
-*~
-*.log
-*.tmp
-
-# NuGet Packages
-*.nupkg
-*.snupkg
-**/packages/*
-
-# Test Results
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
-*.backup
-
-# Node/Vite
-node_modules
-dist
-dist-ssr
-*.local
-.env
-.env.local
-.env.*.local
-
-# Editor
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?

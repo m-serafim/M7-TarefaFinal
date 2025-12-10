@@ -12,7 +12,7 @@ import type {
 } from '../types';
 import { CONFIG } from '../constants';
 
-const API_KEY = CONFIG.STEAM_API_KEY || 'F00809147D68F4B802F8D6222E404F8A';
+const API_KEY = CONFIG.STEAM_API_KEY || 'AF808E20F819BD7725AB4D288555118B';
 const REQUEST_TIMEOUT = CONFIG.REQUEST_TIMEOUT;
 
 // Debug: Check if API key is loaded
