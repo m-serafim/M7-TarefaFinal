@@ -61,6 +61,7 @@ function App() {
   const [loadingStatus, setLoadingStatus] = useState('INITIALIZING SYSTEM');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isLoaderFading, setIsLoaderFading] = useState(false);
+  const [isContentLoading, setIsContentLoading] = useState(false);
   const [preloadedImageMap, setPreloadedImageMap] = useState<Record<number, string>>({});
 
   // Load games on mount
@@ -96,6 +97,11 @@ function App() {
 
   // Handle search
   const handleSearch = useCallback((query: string) => {
+    // Start loader immediately for premium feel
+    setIsContentLoading(true);
+    setLoadingStatus("SEARCHING DATABASE...");
+    setLoadingProgress(10);
+
     setSearchQuery(query);
     setPagination(prev => ({ ...prev, page: 1 }));
     saveLastSearch(query);
@@ -220,6 +226,41 @@ function App() {
     return processedGames.slice(start, end);
   }, [processedGames, pagination]);
 
+  // Handle force refresh of current data
+  const handleForceRefresh = useCallback(() => {
+    const visibleGames = paginatedGames;
+    if (visibleGames.length === 0) return;
+
+    setIsContentLoading(true);
+    setLoadingStatus("REFRESHING DATA...");
+    setLoadingProgress(10);
+
+    const appids = visibleGames.map(g => g.appid);
+
+    getManyGameDetails(appids)
+      .then(detailsMap => {
+        setAllGames(prevGames => {
+          return prevGames.map(game => {
+            if (detailsMap.hasOwnProperty(game.appid)) {
+              return { ...game, details: detailsMap[game.appid] || null };
+            }
+            return game;
+          });
+        });
+        setLoadingProgress(100);
+      })
+      .catch(err => {
+        console.error("Force refresh failed:", err);
+      })
+      .finally(() => {
+        setIsLoaderFading(true);
+        setTimeout(() => {
+          setIsContentLoading(false);
+          setIsLoaderFading(false);
+        }, 1200);
+      });
+  }, [paginatedGames]);
+
   // Fetch details for paginated games (lazy loading)
   useEffect(() => {
     const controller = new AbortController();
@@ -228,7 +269,25 @@ function App() {
       // Only fetch if details is literally undefined (not null)
       const gamesToFetch = paginatedGames.filter(game => game.details === undefined);
 
-      if (gamesToFetch.length === 0) return;
+      if (gamesToFetch.length === 0) {
+        // If we are currently loading (e.g. from search), close it gracefully
+        if (isContentLoading) {
+          setLoadingProgress(100);
+          setLoadingStatus("RESULTS READY");
+          setIsLoaderFading(true);
+          setTimeout(() => {
+            setIsContentLoading(false);
+            setIsLoaderFading(false);
+          }, 800);
+        }
+        return;
+      }
+
+      // START LOADING ANIMATION
+      // Only show full loader if we are fetching a significant amount or it's a search result
+      setIsContentLoading(true);
+      setLoadingStatus("FETCHING GAME DETAILS...");
+      setLoadingProgress(30);
 
       console.log(`[Details] Fetching details for ${gamesToFetch.length} games on page ${pagination.page}`);
 
@@ -246,8 +305,17 @@ function App() {
           });
           return updatedGames;
         });
+
+        setLoadingProgress(100);
       } catch (err) {
         console.error("Failed to fetch details:", err);
+      } finally {
+        // Small delay to ensure smooth transition
+        setIsLoaderFading(true);
+        setTimeout(() => {
+          setIsContentLoading(false);
+          setIsLoaderFading(false);
+        }, 1200);
       }
     };
 
@@ -298,9 +366,6 @@ function App() {
 
     if (gamesProcessed.length === visibleGames.length && gamesProcessed.length > 0) {
       // All details processed. Filter successful ones for images.
-      const gamesWithImages = gamesProcessed.filter(g => g.details && g.details.header_image);
-      const imageUrls = gamesWithImages.map(g => g.details!.header_image);
-
       setLoadingStatus("DOWNLOADING ASSETS...");
 
       const imageMap: Record<number, string> = {};
@@ -401,8 +466,8 @@ function App() {
 
   return (
     <div className="app">
-      {isInitialLoad && (
-        <PremiumLoader progress={loadingProgress} status={loadingStatus} fadingOut={isLoaderFading} />
+      {(isInitialLoad || isContentLoading) && (
+        <PremiumLoader progress={loadingProgress} status={loadingStatus} fadingOut={isLoaderFading || (!isInitialLoad && !isContentLoading)} />
       )}
       <Header>
         <SearchBar
@@ -419,6 +484,18 @@ function App() {
               sort={sort}
               onSortChange={handleSortChange}
             />
+            <button
+              className="refresh-button"
+              onClick={handleForceRefresh}
+              title="Reload Game Details"
+              aria-label="Reload Game Details"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 4v6h-6"></path>
+                <path d="M1 20v-6h6"></path>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+            </button>
           </div>
         </div>
 
