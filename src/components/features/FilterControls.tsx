@@ -33,15 +33,35 @@ export const FilterControls = ({ filters, onFiltersChange }: FilterControlsProps
     });
   };
 
+  const handleFavoritesChange = (isFavorite: boolean) => {
+    onFiltersChange({
+      ...filters,
+      favoritesOnly: isFavorite ? true : undefined
+    });
+  };
+
   const clearFilters = () => {
     onFiltersChange({});
   };
 
-  const hasActiveFilters = filters.genre || filters.isFree !== undefined || filters.platform;
+  const hasActiveFilters = filters.genre || filters.isFree !== undefined || filters.platform || filters.favoritesOnly;
 
   return (
     <div className="filter-controls">
       <h3 className="filter-title">Filters</h3>
+
+      <div className="filter-group favorites-filter">
+        <label className="filter-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+          <span>Favorites Only</span>
+          <input
+            type="checkbox"
+            className="filter-checkbox"
+            checked={!!filters.favoritesOnly}
+            onChange={(e) => handleFavoritesChange(e.target.checked)}
+            style={{ width: 'auto' }}
+          />
+        </label>
+      </div>
 
       <div className="filter-group">
         <label htmlFor="filter-genre" className="filter-label">

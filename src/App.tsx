@@ -166,9 +166,16 @@ function App() {
     }));
 
     // Apply filters (works for games with loaded details)
-    if (filters.genre || filters.isFree !== undefined || filters.platform) {
+    if (filters.genre || filters.isFree !== undefined || filters.platform || filters.favoritesOnly) {
       enhancedGames = enhancedGames.filter(game => {
-        if (!game.details) return true; // Keep if no details yet
+        // Filter by favorites (no details needed)
+        if (filters.favoritesOnly && !game.isFavorite) return false;
+
+        if (!game.details) {
+          // If we only have favorites filter, we can keep it (assuming it matched above)
+          // If we have other filters, we keep it as "candidate" (unless scanning logic hides it later)
+          return true;
+        }
 
         // Filter by genre
         if (filters.genre) {
@@ -573,20 +580,53 @@ function App() {
               {finalUiState === 'empty' && <EmptyState />}
               {finalUiState === 'success' && (
                 <>
-                  {isContentLoading || paginatedGames.some(g => g.details === undefined) ? (
-                    <SkeletonLoader count={pagination.limit} />
-                  ) : (
-                    <GameList
-                      games={paginatedGames}
-                      preloadedImages={preloadedImageMap}
-                      onToggleFavorite={handleToggleFavorite}
-                    />
-                  )}
-                  <Pagination
-                    pagination={pagination}
-                    totalItems={processedGames.length}
-                    onPaginationChange={handlePaginationChange}
-                  />
+                  {(() => {
+                    const hasDetailFilters = Boolean(filters.genre || filters.isFree !== undefined || filters.platform);
+                    const hasUnverifiedCandidates = paginatedGames.some(g => !g.details);
+                    const isScanning = hasDetailFilters && hasUnverifiedCandidates;
+
+                    // If strict filters are on, ONLY show games that actually have details loaded.
+                    // This hides the "Skeletons" for games that are likely formatted out after loading.
+                    const displayGames = hasDetailFilters
+                      ? paginatedGames.filter(g => g.details)
+                      : paginatedGames; // For simple search/sort, we can show everything (or skeletons via GameList handling)
+
+                    return (
+                      <>
+                        <GameList
+                          games={displayGames}
+                          preloadedImages={preloadedImageMap}
+                          onToggleFavorite={handleToggleFavorite}
+                        />
+
+                        {/* Show scanning indicator if we are filtering and have pending candidates */}
+                        {isScanning && (
+                          <div className="scanning-indicator" style={{
+                            textAlign: 'center',
+                            padding: '2rem',
+                            width: '100%',
+                            color: 'var(--text-secondary)'
+                          }}>
+                            <div className="loading-spinner-small" style={{ display: 'inline-block', marginBottom: '10px' }}></div>
+                            <p>Searching for matches...</p>
+                          </div>
+                        )}
+
+                        {/* Only show skeletons if we are NOT in strict filter mode but are loading content 
+                            (e.g. simple search or pagination without heavy filters) */}
+                        {(isContentLoading && !hasDetailFilters) && (
+                          <SkeletonLoader count={pagination.limit - displayGames.length} />
+                        )}
+
+                        <Pagination
+                          pagination={pagination}
+                          totalItems={processedGames.length}
+                          onPaginationChange={handlePaginationChange}
+                          disabled={isScanning}
+                        />
+                      </>
+                    );
+                  })()}
                 </>
               )}
             </div>

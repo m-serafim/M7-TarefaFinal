@@ -92,6 +92,7 @@ export interface FilterOptions {
   genre?: string;
   isFree?: boolean;
   platform?: 'windows' | 'mac' | 'linux';
+  favoritesOnly?: boolean;
 }
 
 export interface SortOptions {

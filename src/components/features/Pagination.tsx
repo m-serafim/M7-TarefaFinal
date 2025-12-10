@@ -12,9 +12,10 @@ interface PaginationProps {
   pagination: PaginationOptions;
   totalItems: number;
   onPaginationChange: (pagination: PaginationOptions) => void;
+  disabled?: boolean;
 }
 
-export const Pagination = ({ pagination, totalItems, onPaginationChange }: PaginationProps) => {
+export const Pagination = ({ pagination, totalItems, onPaginationChange, disabled }: PaginationProps) => {
   const pageSizeInputRef = useRef<HTMLInputElement>(null);
 
   const totalPages = Math.ceil(totalItems / pagination.limit);
@@ -22,7 +23,7 @@ export const Pagination = ({ pagination, totalItems, onPaginationChange }: Pagin
   const endItem = Math.min(pagination.page * pagination.limit, totalItems);
 
   const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
+    if (!disabled && newPage >= 1 && newPage <= totalPages) {
       onPaginationChange({
         ...pagination,
         page: newPage
@@ -31,7 +32,7 @@ export const Pagination = ({ pagination, totalItems, onPaginationChange }: Pagin
   };
 
   const handlePageSizeChange = (newSize: number) => {
-    if (pageSizeInputRef.current && validatePageSize(pageSizeInputRef.current, newSize)) {
+    if (!disabled && pageSizeInputRef.current && validatePageSize(pageSizeInputRef.current, newSize)) {
       onPaginationChange({
         page: 1, // Reset to first page when changing page size
         limit: newSize
@@ -40,6 +41,7 @@ export const Pagination = ({ pagination, totalItems, onPaginationChange }: Pagin
   };
 
   const handleCustomPageSize = (value: string) => {
+    if (disabled) return;
     const size = parseInt(value, 10);
     if (!isNaN(size)) {
       handlePageSizeChange(size);
@@ -88,7 +90,7 @@ export const Pagination = ({ pagination, totalItems, onPaginationChange }: Pagin
   }
 
   return (
-    <div className="pagination">
+    <div className={`pagination ${disabled ? 'disabled' : ''}`}>
       <div className="pagination-info">
         <span>
           Showing {startItem} to {endItem} of {totalItems} results
@@ -99,17 +101,16 @@ export const Pagination = ({ pagination, totalItems, onPaginationChange }: Pagin
         <button
           className="pagination-button"
           onClick={() => handlePageChange(1)}
-          disabled={pagination.page === 1}
+          disabled={disabled || pagination.page === 1}
           aria-label="First page"
           type="button"
         >
           ⟪
         </button>
-
         <button
           className="pagination-button"
           onClick={() => handlePageChange(pagination.page - 1)}
-          disabled={pagination.page === 1}
+          disabled={disabled || pagination.page === 1}
           aria-label="Previous page"
           type="button"
         >
@@ -122,6 +123,7 @@ export const Pagination = ({ pagination, totalItems, onPaginationChange }: Pagin
               key={index}
               className={`pagination-button ${pageNum === pagination.page ? 'active' : ''}`}
               onClick={() => handlePageChange(pageNum)}
+              disabled={disabled}
               aria-label={`Page ${pageNum}`}
               aria-current={pageNum === pagination.page ? 'page' : undefined}
               type="button"
@@ -138,7 +140,7 @@ export const Pagination = ({ pagination, totalItems, onPaginationChange }: Pagin
         <button
           className="pagination-button"
           onClick={() => handlePageChange(pagination.page + 1)}
-          disabled={pagination.page === totalPages}
+          disabled={disabled || pagination.page === totalPages}
           aria-label="Next page"
           type="button"
         >
