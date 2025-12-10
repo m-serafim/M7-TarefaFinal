@@ -5,7 +5,7 @@
 export const CONFIG = {
   // API Configuration
   STEAM_API_KEY: import.meta.env.VITE_STEAM_API_KEY || '',
-  REQUEST_TIMEOUT: 15000, // 15 seconds (Steam API can be slow with large responses)
+  REQUEST_TIMEOUT: 10000, // 10 seconds (Matches requirement 6-10s)
 
   // Game Loading Configuration
   PRIORITIZE_POPULAR_GAMES: true, // Load popular games first

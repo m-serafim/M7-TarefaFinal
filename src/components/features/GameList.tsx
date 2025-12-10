@@ -10,9 +10,10 @@ import './GameList.css';
 interface GameListProps {
   games: EnhancedGame[];
   preloadedImages?: Record<number, string>;
+  onToggleFavorite?: (appid: number) => void;
 }
 
-export const GameList = ({ games, preloadedImages = {} }: GameListProps) => {
+export const GameList = ({ games, preloadedImages = {}, onToggleFavorite }: GameListProps) => {
   return (
     <div className="game-list" role="list">
       {games.map((game, index) => (
@@ -21,6 +22,7 @@ export const GameList = ({ games, preloadedImages = {} }: GameListProps) => {
             game={game}
             priority={index < 6}
             preloadedUrl={preloadedImages[game.appid]}
+            onToggleFavorite={onToggleFavorite}
           />
         </div>
       ))}

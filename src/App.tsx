@@ -38,7 +38,8 @@ import {
   EmptyState,
   Header,
   Footer,
-  PremiumLoader
+  PremiumLoader,
+  SkeletonLoader
 } from './components/ui';
 import './App.css';
 
@@ -52,7 +53,7 @@ function App() {
     page: 1,
     limit: CONFIG.DEFAULT_PAGE_SIZE
   });
-  const [favorites] = useState<number[]>(getFavorites());
+  const [favorites, setFavorites] = useState<number[]>(getFavorites());
   const [uiState, setUiState] = useState<UIState>('idle');
   const [error, setError] = useState<Error | null>(null);
 
@@ -97,11 +98,7 @@ function App() {
 
   // Handle search
   const handleSearch = useCallback((query: string) => {
-    // Start loader immediately for premium feel
     setIsContentLoading(true);
-    setLoadingStatus("SEARCHING DATABASE...");
-    setLoadingProgress(10);
-
     setSearchQuery(query);
     setPagination(prev => ({ ...prev, page: 1 }));
     saveLastSearch(query);
@@ -109,6 +106,7 @@ function App() {
 
   // Handle filter change
   const handleFiltersChange = useCallback((newFilters: FilterOptions) => {
+    setIsContentLoading(true);
     setFilters(newFilters);
     setPagination(prev => ({ ...prev, page: 1 }));
     saveLastFilters(newFilters);
@@ -116,6 +114,7 @@ function App() {
 
   // Handle sort change
   const handleSortChange = useCallback((newSort: SortOptions) => {
+    setIsContentLoading(true);
     setSort(newSort);
     setPagination(prev => ({ ...prev, page: 1 }));
     saveLastSort(newSort);
@@ -123,9 +122,24 @@ function App() {
 
   // Handle pagination change
   const handlePaginationChange = useCallback((newPagination: PaginationOptions) => {
+    setIsContentLoading(true);
     setPagination(newPagination);
   }, []);
 
+  // Handle favorite toggle
+  const handleToggleFavorite = useCallback((appid: number) => {
+    // Import dynamically to avoid circular dependencies if any, or just use imported
+    const newFavorites = favorites.includes(appid)
+      ? favorites.filter(id => id !== appid)
+      : [...favorites, appid];
+
+    setFavorites(newFavorites);
+
+    // Persist
+    import('./services').then(services => {
+      services.toggleFavorite(appid);
+    });
+  }, [favorites]);
 
 
   // Handle retry
@@ -187,10 +201,11 @@ function App() {
         case 'appid':
           comparison = a.appid - b.appid;
           break;
-        case 'popularity':
+        case 'popularity': {
           // Use index in POPULAR_GAME_APPIDS (0 is most popular)
-          const indexA = POPULAR_GAME_APPIDS.indexOf(a.appid as any);
-          const indexB = POPULAR_GAME_APPIDS.indexOf(b.appid as any);
+          const popularIds = POPULAR_GAME_APPIDS as readonly number[];
+          const indexA = popularIds.indexOf(a.appid);
+          const indexB = popularIds.indexOf(b.appid);
 
           // If not in popular list, push to end
           const valA = indexA !== -1 ? indexA : Number.MAX_SAFE_INTEGER;
@@ -203,12 +218,14 @@ function App() {
             comparison = a.appid - b.appid;
           }
           break;
-        case 'release_date':
+        }
+        case 'release_date': {
           // Parse release dates from game details
           const dateA = a.details?.release_date?.date ? new Date(a.details.release_date.date).getTime() : 0;
           const dateB = b.details?.release_date?.date ? new Date(b.details.release_date.date).getTime() : 0;
           comparison = dateA - dateB;
           break;
+        }
         default:
           comparison = 0;
       }
@@ -241,7 +258,7 @@ function App() {
       .then(detailsMap => {
         setAllGames(prevGames => {
           return prevGames.map(game => {
-            if (detailsMap.hasOwnProperty(game.appid)) {
+            if (Object.prototype.hasOwnProperty.call(detailsMap, game.appid)) {
               return { ...game, details: detailsMap[game.appid] || null };
             }
             return game;
@@ -261,70 +278,105 @@ function App() {
       });
   }, [paginatedGames]);
 
-  // Fetch details for paginated games (lazy loading)
+  // Fetch details for paginated games (lazy loading) and preload images
   useEffect(() => {
     const controller = new AbortController();
 
-    const fetchDetailsForVisibleGames = async () => {
-      // Only fetch if details is literally undefined (not null)
+    const ensureContentReady = async () => {
+      // 1. Identify games that are missing details
       const gamesToFetch = paginatedGames.filter(game => game.details === undefined);
 
-      if (gamesToFetch.length === 0) {
-        // If we are currently loading (e.g. from search), close it gracefully
-        if (isContentLoading) {
-          setLoadingProgress(100);
-          setLoadingStatus("RESULTS READY");
-          setIsLoaderFading(true);
-          setTimeout(() => {
-            setIsContentLoading(false);
-            setIsLoaderFading(false);
-          }, 800);
+      if (gamesToFetch.length > 0) {
+        // If we have games needing details, we MUST be in loading state.
+        // If somehow we aren't (e.g. background update?), we might not want to force full loader,
+        // but for search/nav consistency we usually are.
+        // We'll enforce it if we are already loading, or just proceed.
+
+        console.log(`[Details] Fetching details for ${gamesToFetch.length} games on page ${pagination.page}`);
+
+        try {
+          const appids = gamesToFetch.map(g => g.appid);
+          const detailsMap = await getManyGameDetails(appids, controller.signal);
+
+          if (!controller.signal.aborted) {
+            setAllGames(prevGames => {
+              return prevGames.map(game => {
+                if (Object.prototype.hasOwnProperty.call(detailsMap, game.appid)) {
+                  return { ...game, details: detailsMap[game.appid] || null };
+                }
+                return game;
+              });
+            });
+            // We do NOT set isContentLoading(false) here. 
+            // We wait for the re-render (triggered by setAllGames) to come back to this effect.
+          }
+        } catch (err) {
+          console.error("Failed to fetch details:", err);
+          if (!controller.signal.aborted) {
+            setIsContentLoading(false); // Fail safe
+          }
         }
         return;
       }
 
-      // START LOADING ANIMATION
-      // Only show full loader if we are fetching a significant amount or it's a search result
-      setIsContentLoading(true);
-      setLoadingStatus("FETCHING GAME DETAILS...");
-      setLoadingProgress(30);
+      // 2. If we are here, ALL visible games have details (or null).
+      // Now we check if we should be loading images.
+      if (isContentLoading) {
+        if (paginatedGames.length === 0) {
+          setIsContentLoading(false);
+          return;
+        }
 
-      console.log(`[Details] Fetching details for ${gamesToFetch.length} games on page ${pagination.page}`);
+        const validGames = paginatedGames.filter(g => g.details && g.details.header_image);
+        if (validGames.length === 0) {
+          setIsContentLoading(false);
+          return;
+        }
 
-      try {
-        const appids = gamesToFetch.map(g => g.appid);
-        const detailsMap = await getManyGameDetails(appids, controller.signal);
+        // Check which images we actually need to preload (not already in map)
+        const gamesToPreload = validGames.filter(g => !preloadedImageMap[g.appid]);
 
-        setAllGames(prevGames => {
-          const updatedGames = prevGames.map(game => {
-            if (detailsMap.hasOwnProperty(game.appid)) {
-              // If null, it means API returned failure/empty for this ID
-              return { ...game, details: detailsMap[game.appid] || null };
-            }
-            return game;
-          });
-          return updatedGames;
+        if (gamesToPreload.length === 0) {
+          // All images already cached/preloaded
+          setTimeout(() => setIsContentLoading(false), 100);
+          return;
+        }
+
+        // Perform parallel preloading
+        const imageMap: Record<number, string> = {};
+        const promises = gamesToPreload.map(game => {
+          // Use header_image from details
+          const url = game.details!.header_image!;
+
+          // We use fetch -> blob to ensure it's actually loaded and to bypass some restrictions if any
+          // Or simply to wait for the network.
+          return fetch(url, { signal: controller.signal })
+            .then(async res => {
+              if (!res.ok) throw new Error('Failed to load image');
+              const blob = await res.blob();
+              imageMap[game.appid] = URL.createObjectURL(blob);
+            })
+            .catch(() => {
+              // Ignore failures, we'll fallback to "No Image" or standard img tag
+            });
         });
 
-        setLoadingProgress(100);
-      } catch (err) {
-        console.error("Failed to fetch details:", err);
-      } finally {
-        // Small delay to ensure smooth transition
-        setIsLoaderFading(true);
-        setTimeout(() => {
-          setIsContentLoading(false);
-          setIsLoaderFading(false);
-        }, 1200);
+        await Promise.all(promises);
+
+        if (!controller.signal.aborted) {
+          setPreloadedImageMap(prev => ({ ...prev, ...imageMap }));
+          // Small delay to ensure state updates propagate
+          setTimeout(() => setIsContentLoading(false), 200);
+        }
       }
     };
 
-    fetchDetailsForVisibleGames();
+    ensureContentReady();
 
     return () => {
       controller.abort();
     };
-  }, [paginatedGames, pagination.page]);
+  }, [paginatedGames, pagination.page, isContentLoading]);
 
 
 
@@ -466,8 +518,8 @@ function App() {
 
   return (
     <div className="app">
-      {(isInitialLoad || isContentLoading) && (
-        <PremiumLoader progress={loadingProgress} status={loadingStatus} fadingOut={isLoaderFading || (!isInitialLoad && !isContentLoading)} />
+      {isInitialLoad && (
+        <PremiumLoader progress={loadingProgress} status={loadingStatus} fadingOut={isLoaderFading} />
       )}
       <Header>
         <SearchBar
@@ -521,11 +573,15 @@ function App() {
               {finalUiState === 'empty' && <EmptyState />}
               {finalUiState === 'success' && (
                 <>
-                  <GameList
-                    games={paginatedGames}
-                    preloadedImages={preloadedImageMap}
-                  />
-
+                  {isContentLoading || paginatedGames.some(g => g.details === undefined) ? (
+                    <SkeletonLoader count={pagination.limit} />
+                  ) : (
+                    <GameList
+                      games={paginatedGames}
+                      preloadedImages={preloadedImageMap}
+                      onToggleFavorite={handleToggleFavorite}
+                    />
+                  )}
                   <Pagination
                     pagination={pagination}
                     totalItems={processedGames.length}

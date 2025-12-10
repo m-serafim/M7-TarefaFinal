@@ -20,9 +20,10 @@ interface GameCardProps {
   game: EnhancedGame;
   priority?: boolean;
   preloadedUrl?: string; // Blob URL
+  onToggleFavorite?: (appid: number) => void;
 }
 
-export const GameCard = ({ game, priority = false, preloadedUrl }: GameCardProps) => {
+export const GameCard = ({ game, priority = false, preloadedUrl, onToggleFavorite }: GameCardProps) => {
   const details = game.details;
   const headerImage = details?.header_image;
 
@@ -45,7 +46,7 @@ export const GameCard = ({ game, priority = false, preloadedUrl }: GameCardProps
   if (targetSrc !== currentSrc && !imageError) {
     setCurrentSrc(targetSrc);
     // If it's a blob url, it's instant.
-    setImageLoading(!!preloadedUrl ? false : !priority);
+    setImageLoading(preloadedUrl ? false : !priority);
   }
 
 
@@ -59,6 +60,14 @@ export const GameCard = ({ game, priority = false, preloadedUrl }: GameCardProps
 
   const handleImageLoad = () => {
     setImageLoading(false);
+  };
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onToggleFavorite) {
+      onToggleFavorite(game.appid);
+    }
   };
 
   const shortDesc = details?.short_description;
@@ -82,7 +91,17 @@ export const GameCard = ({ game, priority = false, preloadedUrl }: GameCardProps
           onLoad={handleImageLoad}
           loading={priority ? "eager" : "lazy"}
         />
-
+        {onToggleFavorite && (
+          <button
+            className={`game-card-favorite ${game.isFavorite ? 'active' : ''}`}
+            onClick={handleFavoriteClick}
+            aria-label={game.isFavorite ? "Remove from favorites" : "Add to favorites"}
+            aria-pressed={game.isFavorite}
+            type="button"
+          >
+            {game.isFavorite ? '★' : '☆'}
+          </button>
+        )}
       </div>
 
       <div className="game-card-content">

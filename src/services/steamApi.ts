@@ -200,7 +200,7 @@ export const getManyGameDetails = async (
     // However, we should be careful about URL length and rate limits
     // Batching 20 at a time is usually safe
     const batches: number[][] = [];
-    const BATCH_SIZE = 20;
+    const BATCH_SIZE = 10; // Reduced from 20 to avoid rate limits and large payloads
 
     for (let i = 0; i < appids.length; i += BATCH_SIZE) {
       batches.push(appids.slice(i, i + BATCH_SIZE));
@@ -208,15 +208,32 @@ export const getManyGameDetails = async (
 
     const results: Record<number, SteamGameDetails | null> = {};
 
-    await Promise.all(batches.map(async (batch) => {
+    // Process batches sequentially to respect rate limits
+    for (const batch of batches) {
+      if (signal?.aborted) break;
+
       try {
         const ids = batch.join(',');
-        const url = `/api/steamstore/api/appdetails?appids=${ids}&l=portuguese`;
+        const url = `/api/steamstore/api/appdetails?appids=${ids}&l=english`;
+
+        // Add a small delay between batches (250ms)
+        if (batches.indexOf(batch) > 0) {
+          await new Promise(resolve => setTimeout(resolve, 250));
+        }
 
         const response = await fetchWithTimeout(url, {
           signal,
           mode: 'cors',
         });
+
+        // If rate limited, wait longer and retry or just fail smoothly
+        if (response.status === 429) {
+          console.warn(`[getManyGameDetails] Rate limit hit for batch, waiting...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Retry once? Or just skip. For now, try to proceed if possible or just fail batch.
+          // Proceed to failure block
+          throw new Error('Rate limit exceeded');
+        }
 
         const data: AppDetailsResponse = await response.json();
 
@@ -230,11 +247,9 @@ export const getManyGameDetails = async (
         });
       } catch (error) {
         console.warn(`[getManyGameDetails] Failed to fetch batch ${batch}:`, error);
-        // Fallback to individual fetching if batch fails? 
-        // Or just mark as null. For now, mark as null.
         batch.forEach(id => { results[id] = null; });
       }
-    }));
+    }
 
     return results;
 
