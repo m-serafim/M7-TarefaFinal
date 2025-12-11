@@ -1,320 +1,227 @@
-# M7 - Tarefa Final: Steam Games Browser
+# M7-TarefaFinal - Steam Games Browser
 
-Uma Single Page Application (SPA) desenvolvida com React + TypeScript + Vite que consome a Steam Web API para navegação e descoberta de jogos.
+A modern React application for browsing Steam games with advanced search, filtering, and sorting capabilities. 
 
-## 🎯 Características
+## 📋 Project Overview
 
-### Funcionalidades Principais
-- ✅ **Pesquisa com Debounce**: Pesquisa de jogos com debounce de 400ms e suporte para Enter
-- ✅ **Filtros**: Filtragem por género, preço (gratuito/pago) e plataforma
-- ✅ **Ordenação**: Ordenação por nome, ID ou data de lançamento (crescente/decrescente)
-- ✅ **Paginação**: Navegação por páginas com seletor de tamanho (10, 20, 50, 100 ou personalizado)
-- ✅ **Favoritos**: Sistema de favoritos com persistência em localStorage
-- ✅ **Estados de UI**: Loading, Empty, Error (com botão Retry) e Success
-- ✅ **Persistência**: localStorage para favoritos e últimas preferências (filtros, ordenação, pesquisa)
-- ✅ **Acessibilidade**: aria-live, labels associados, navegação por teclado
-- ✅ **Responsividade**: Design adaptativo mobile-first
+This is a Single Page Application (SPA) built with React 19, TypeScript, and Vite that integrates with the Steam Web API to provide a comprehensive game browsing experience. The application features real-time search, filtering by genre and platform, persistent favorites, and responsive design.
 
-### Formatação de Dados (pt-PT)
-- **String**: Fallback para "—" quando vazio
-- **Número**: toLocaleString('pt-PT') para contagens
-- **Data**: Intl.DateTimeFormat para datas de lançamento
-- **Boolean**: Badges visuais ✓/✗ para características
-- **Moeda**: formatação em EUR com suporte a descontos
-- **Imagem**: Alt text + fallback para imagens não disponíveis
+## 🚀 API Integration
 
-### Robustez da Aplicação
-- **AbortController**: Cancelamento de requests anteriores
-- **Timeout**: 8 segundos para cada request
-- **Tratamento de Erros**: !response.ok verificado antes de json()
-- **Normalização**: Payload normalizado para [] ou { data: [] }
-- **404 Handling**: Tratado como estado vazio
+### API Used
+**Steam Web API**
+- Official Documentation: [https://steamcommunity.com/dev](https://steamcommunity.com/dev)
+- Steam Store API Documentation: [https://wiki.teamfortress.com/wiki/User:RJackson/StorefrontAPI](https://wiki.teamfortress.com/wiki/User:RJackson/StorefrontAPI)
 
-## 🚀 Como Executar
+### Endpoints Used
 
-### Pré-requisitos
-- Node.js (v18 ou superior)
-- npm ou yarn
+1. **GetAppList** - `GET /ISteamApps/GetAppList/v2/`
+   - Retrieves the complete list of Steam applications
+   - Returns: `appid`, `name`
 
-### Instalação e Execução
+2. **AppDetails** - `GET /api/appdetails`
+   - Fetches detailed information about specific games
+   - Returns: `name`, `steam_appid`, `type`, `short_description`, `header_image`, `is_free`, `price_overview`, `platforms`, `genres`, `developers`, `publishers`, `release_date`, `metacritic`
 
-```bash
-# Instalar dependências
-npm install
+3. **GetNumberOfCurrentPlayers** - `GET /ISteamUserStats/GetNumberOfCurrentPlayers/v1/`
+   - Gets the current player count for a game
+   - Returns: `player_count`, `result`
 
-# Executar em modo de desenvolvimento
-npm run dev
+### JSON Fields Extracted
 
-# Build para produção
-npm run build
+The application extracts and displays the following fields from the Steam API responses: 
 
-# Preview do build de produção
-npm run preview
+- **Basic Information**: `appid`, `name`, `type`
+- **Descriptions**: `short_description`, `detailed_description`
+- **Media**: `header_image`
+- **Pricing**: `is_free`, `price_overview` (currency, initial, final, discount_percent)
+- **Platform Support**: `platforms` (windows, mac, linux)
+- **Metadata**: `genres`, `categories`, `developers`, `publishers`, `release_date`
+- **Ratings**: `metacritic` (score, url)
+- **Statistics**: `player_count` (current players)
 
-# Lint do código
-npm run lint
-```
-
-A aplicação estará disponível em `http://localhost:5173`
-
-### Configuração da API Key
-
-A aplicação já inclui uma Steam Web API Key configurada no ficheiro `.env`:
-
-```env
-VITE_STEAM_API_KEY=A006ACDA16070433EBB65D9A1645C077
-```
-
-Para usar a sua própria key:
-1. Obtenha uma key em https://steamcommunity.com/dev/apikey
-2. Atualize o ficheiro `.env` com a sua key
-
-## 📡 API Contract
-
-### Endpoints Steam Utilizados
-
-#### 1. GetAppList
-```
-GET /ISteamApps/GetAppList/v2/
-```
-**Query Parameters:**
-- `key`: Steam API Key
-
-**Response:**
-```typescript
-{
-  applist: {
-    apps: Array<{
-      appid: number;
-      name: string;
-    }>;
-  }
-}
-```
-
-#### 2. AppDetails (Steam Store API)
-```
-GET /api/appdetails
-```
-**Query Parameters:**
-- `appids`: ID da aplicação
-- `l`: Idioma (portuguese)
-
-**Response:**
-```typescript
-{
-  [appid: string]: {
-    success: boolean;
-    data?: {
-      type: string;
-      name: string;
-      steam_appid: number;
-      is_free: boolean;
-      short_description: string;
-      header_image: string;
-      release_date: {
-        coming_soon: boolean;
-        date: string;
-      };
-      price_overview?: {
-        currency: string;
-        initial: number;
-        final: number;
-        discount_percent: number;
-      };
-      platforms: {
-        windows: boolean;
-        mac: boolean;
-        linux: boolean;
-      };
-      genres?: Array<{
-        id: string;
-        description: string;
-      }>;
-      // ... mais campos
-    };
-  }
-}
-```
-
-#### 3. GetNumberOfCurrentPlayers
-```
-GET /ISteamUserStats/GetNumberOfCurrentPlayers/v1/
-```
-**Query Parameters:**
-- `key`: Steam API Key
-- `appid`: ID da aplicação
-
-**Response:**
-```typescript
-{
-  response: {
-    player_count: number;
-    result: number;
-  }
-}
-```
-
-### Proxy Configuration
-
-O Vite está configurado para fazer proxy das requests da Steam API para evitar problemas de CORS em desenvolvimento:
-
-```typescript
-server: {
-  proxy: {
-    '/api/steam': {
-      target: 'https://api.steampowered.com',
-      changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/api\/steam/, ''),
-    },
-    '/api/steamstore': {
-      target: 'https://store.steampowered.com',
-      changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/api\/steamstore/, ''),
-    }
-  }
-}
-```
-
-## 💾 Persistência (localStorage)
-
-### Estrutura de Dados
-```typescript
-{
-  favorites: number[];           // Array de appids favoritos
-  lastFilters?: {               // Últimos filtros aplicados
-    genre?: string;
-    isFree?: boolean;
-    platform?: 'windows' | 'mac' | 'linux';
-  };
-  lastSort?: {                  // Última ordenação
-    field: 'name' | 'appid' | 'release_date';
-    order: 'asc' | 'desc';
-  };
-  lastSearch?: string;          // Última pesquisa
-}
-```
-
-### Key do localStorage
-- **Key**: `steam-games-browser`
-- **Localização**: Gerida pelo serviço em `src/services/localStorage.ts`
-
-## 🎨 Design e Estilo
-
-O design foi inspirado no repositório [m-serafim/AtlasOs_Files](https://github.com/m-serafim/AtlasOs_Files), com:
-- Paleta de cores escuras (dark theme)
-- Tipografia sistema-ui/Segoe UI
-- Layout limpo e moderno
-- Transições suaves
-- Componentes bem espaçados
-
-### Variáveis CSS Principais
-```css
---color-primary: #0078d4;
---color-bg-primary: #0d1117;
---color-bg-secondary: #161b22;
---color-text-primary: #e6edf3;
-```
-
-## 🧪 Como Testar
-
-### Funcionalidades a Testar
-
-1. **Pesquisa**
-   - Digite um termo e aguarde 400ms (debounce)
-   - Pressione Enter para pesquisa imediata
-   - Teste pesquisas vazias
-
-2. **Filtros**
-   - Selecione diferentes géneros
-   - Alterne entre jogos gratuitos/pagos
-   - Filtre por plataforma
-   - Clique em "Limpar filtros"
-
-3. **Ordenação**
-   - Ordene por nome, ID ou data
-   - Alterne entre crescente e decrescente
-   - Use o botão de toggle
-
-4. **Paginação**
-   - Navegue entre páginas
-   - Altere o tamanho da página
-   - Use o input personalizado
-   - Teste primeira/última página
-
-5. **Favoritos**
-   - Adicione jogos aos favoritos
-   - Remova dos favoritos
-   - Verifique persistência (recarregue a página)
-
-6. **Persistência**
-   - Aplique filtros e recarregue
-   - Faça pesquisa e recarregue
-   - Verifique se preferências são mantidas
-
-7. **Estados de UI**
-   - Observe o loading ao carregar
-   - Pesquise algo inexistente (empty)
-   - Simule erro de rede (error + retry)
-
-8. **Responsividade**
-   - Teste em mobile (< 768px)
-   - Teste em tablet (768-1024px)
-   - Teste em desktop (> 1024px)
-
-## 📁 Estrutura do Projeto
+## 🏗️ Project Structure
 
 ```
-src/
-├── components/
-│   ├── features/        # Componentes de funcionalidades
-│   │   ├── SearchBar.tsx
-│   │   ├── FilterControls.tsx
-│   │   ├── SortControls.tsx
-│   │   ├── Pagination.tsx
-│   │   ├── GameCard.tsx
-│   │   └── GameList.tsx
-│   └── ui/              # Componentes de UI base
-│       ├── LoadingState.tsx
-│       ├── ErrorState.tsx
-│       └── EmptyState.tsx
-├── hooks/               # Custom React hooks
-│   ├── useDebounce.ts
-│   ├── useFetch.ts
-│   └── useLocalStorage.ts
-├── services/            # Serviços da aplicação
-│   ├── steamApi.ts      # API Steam
-│   └── localStorage.ts  # Persistência
-├── types/               # Definições TypeScript
-│   └── steam.ts
-├── utils/               # Funções utilitárias
-│   ├── formatters.ts
-│   └── validators.ts
-├── App.tsx              # Componente principal
-├── main.tsx             # Ponto de entrada
-└── index.css            # Estilos globais
+M7-TarefaFinal/
+├── src/
+│   ├── components/       # React components
+│   │   ├── features/     # Feature-specific components
+│   │   └── ui/           # Reusable UI components
+│   ├── hooks/            # Custom React hooks
+│   ├── services/         # API service layer
+│   ├── types/            # TypeScript type definitions
+│   ├── utils/            # Utility functions
+│   ├── constants/        # Application constants
+│   ├── assets/           # Static assets
+│   ├── App.tsx           # Main application component
+│   ├── App.css           # Application styles
+│   ├── main.tsx          # Application entry point
+│   └── index.css         # Global styles
+├── public/               # Public static files
+├── proxy-server.js       # CORS proxy server
+├── package. json          # Dependencies and scripts
+├── tsconfig.json         # TypeScript configuration
+├── vite.config.ts        # Vite configuration
+└── README.md             # Project documentation
 ```
 
-## 🛠️ Tecnologias
+## 🔧 Prerequisites
 
-- **React 19.2.0**: Framework UI
-- **TypeScript 5.9**: Type safety
-- **Vite 7.2**: Build tool e dev server
-- **CSS3**: Estilos com variáveis CSS
-- **Steam Web API**: Fonte de dados
+Before running this project, you need to have Node.js installed on your system. 
 
-## 📝 Notas Adicionais
+**Download Node.js**:  [https://nodejs.org/en/download](https://nodejs.org/en/download)
 
-- A aplicação faz requests para a Steam API através do proxy Vite
-- Em produção, será necessário configurar um proxy no servidor
-- A API da Steam tem rate limits - use com moderação
-- Nem todos os jogos têm todos os campos disponíveis
-- As imagens são carregadas lazy para melhor performance
+- Recommended version: Node.js 18.x or higher
+- This will include npm (Node Package Manager)
 
-## 🤝 Contribuição
+## 🚀 Running the Project in Development Mode
 
-Este projeto foi desenvolvido como trabalho final do módulo M7.
+1. **Download the project** (if not already cloned):
+   ```bash
+   git clone https://github.com/m-serafim/M7-TarefaFinal. git
+   cd M7-TarefaFinal
+   ```
+
+2. **Install dependencies**: 
+   ```bash
+   npm install
+   ```
+
+3. **Start the application**:
+   ```bash
+   npm start
+   ```
+
+   This command will:
+   - Start the CORS proxy server on `http://localhost:3001`
+   - Start the Vite development server with HMR on `http://localhost:5173`
+
+4. **Open your browser** and navigate to: 
+   ```
+   http://localhost:5173
+   ```
+
+### Alternative Commands
+
+- **Run only the development server** (without proxy):
+  ```bash
+  npm run dev
+  ```
+
+- **Run only the proxy server**:
+  ```bash
+  npm run proxy
+  ```
+
+- **Build for production**:
+  ```bash
+  npm run build
+  ```
+
+- **Preview production build**:
+  ```bash
+  npm run preview
+  ```
+
+- **Run linter**:
+  ```bash
+  npm run lint
+  ```
+
+## 🔌 Proxy Configuration
+
+### Why a Proxy?
+
+The Steam API does not support CORS (Cross-Origin Resource Sharing) for browser requests. To bypass this limitation during development, the project includes a Node.js proxy server (`proxy-server.js`) that forwards requests to the Steam API.
+
+### Proxy Endpoints
+
+- **Steam API**: `http://localhost:3001/api/steam/*` → `https://api.steampowered.com/*`
+- **Steam Store API**: `http://localhost:3001/api/steamstore/*` → `https://store.steampowered.com/*`
+
+### How It Works
+
+1. The React application makes requests to `http://localhost:3001/api/steam/...`
+2. The proxy server forwards these requests to `https://api.steampowered.com/...`
+3. The proxy adds CORS headers to the response
+4. The React application receives the data without CORS issues
+
+## 💾 Data Persistence
+
+### Storage Location
+**localStorage** (Browser's Web Storage API)
+
+### Persisted Data
+
+The application persists the following user data in the browser's localStorage:
+
+1. **Favorites** (`steam_favorites`)
+   - List of favorite game IDs (appids)
+   - Survives browser refreshes
+   - Stored as JSON array
+
+2. **Last Search Query** (`steam_last_search`)
+   - User's most recent search term
+   - Restored on page reload
+
+3. **Last Filters** (`steam_last_filters`)
+   - Selected genre, platform, and free-to-play filters
+   - Maintained across sessions
+
+4. **Last Sort Options** (`steam_last_sort`)
+   - Sort field and order preferences
+   - Applied automatically on reload
+
+### Testing Persistence
+
+To verify data persistence:
+
+1. **Add favorites**:  Click the heart icon on any game
+2. **Apply filters**: Select genre, platform, or free games filter
+3. **Search**: Enter a search term
+4. **Refresh the page**: Press F5 or Ctrl+R (Cmd+R on Mac)
+5. **Verify**:  Your favorites, filters, and search should be preserved
+
+To clear persisted data:
+- Open Browser DevTools (F12)
+- Go to **Application** tab (Chrome) or **Storage** tab (Firefox)
+- Navigate to **Local Storage** → `http://localhost:5173`
+- Delete individual items or clear all
+
+## 🛠️ Technology Stack
+
+- **React**:  19.2.0
+- **TypeScript**:  ~5.9.3
+- **Vite**: 7.2.4
+- **Node.js**: Express server for CORS proxy
+- **CSS**: Modern CSS with custom properties
+
+## 📝 Commit History
+
+This repository maintains a clean and descriptive commit history with frequent commits documenting the development process.  You can view the complete history on GitHub: 
+
+[View Commit History](https://github.com/m-serafim/M7-TarefaFinal/commits/main)
+
+## 📚 Additional Documentation
+
+- **API_CONTRACT.md**: Detailed API endpoint documentation and response schemas
+- **IMPLEMENTATION_SUMMARY.md**: Technical implementation details
+- **CONTRIBUTING.md**: Guidelines for contributing to the project
+
+## 🤝 Contributing
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on the code of conduct and the process for submitting pull requests.
+
+## 📄 License
+
+This project is licensed for educational purposes as part of the M7 course assignment. 
+
+## 👤 Author
+
+**m-serafim**
+- GitHub: [@m-serafim](https://github.com/m-serafim)
 
 ---
 
-**Desenvolvido com ❤️ por m-serafim**
+**Last Updated**: December 2025
